@@ -1,14 +1,106 @@
-# Traqo
+<p align="center">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/hero.png">
+    <img src="docs/readme/hero.gif" alt="Traqo — big plans, small steady wins. A gently animated roadmap illustration in Traqo’s white-and-ink design." width="1200">
+  </picture>
+</p>
 
-Traqo is a React and FastAPI workspace for importing roadmaps and tracking task progress over time.
+<p align="center"><b>your next chapter, one checkbox at a time.</b><br>Turn a PDF, a Word document, or that very ambitious pasted plan into a roadmap you can actually follow.</p>
 
-**Now a desktop app for Linux, Windows, and macOS.** The desktop edition bundles the interface, Python API, and SQLite storage. Installed apps work offline and do not require Python or Node.js.
+<p align="center">
+  <a href="#get-the-app"><b>↓ Get the app</b></a> &nbsp; · &nbsp;
+  <a href="#see-it-in-action"><b>See it in action</b></a> &nbsp; · &nbsp;
+  <a href="#run-from-source"><b>Run from source</b></a> &nbsp; · &nbsp;
+  <a href="#support-the-next-update"><b>The side quest 🎮</b></a>
+</p>
 
-![Traqo desktop walkthrough](docs/screenshots/desktop-demo.gif)
+<p align="center"><code>Linux · Windows · macOS</code> &nbsp; <code>offline ready</code> &nbsp; <code>no account</code> &nbsp; <code>saved on your computer</code></p>
 
-### Desktop quick start
+---
 
-For development, install Node.js 24 and Python 3.12, then run from the repository root:
+## From “saved for later” to “done.”
+
+The study plan is in a PDF. The project roadmap is in a chat. The next step is somewhere on page 37.
+
+**Traqo gives the plan a place to live.** Import it, keep its sections and useful context, then work through one clear area at a time. Check something off. Add a note. Come back tomorrow with your progress still there.
+
+<picture>
+  <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/flow.png">
+  <img src="docs/readme/flow.gif" alt="Illustrated workflow: import a plan, focus on a section, and save your progress locally." width="1200">
+</picture>
+
+<sub>The animations above illustrate the workflow. The desktop captures below show the real app.</sub>
+
+## Get the app
+
+| Your computer | Pick this build |
+| --- | --- |
+| **Linux x64** | AppImage for a portable app, or `.deb` for Debian/Ubuntu |
+| **Windows x64** | Setup `.exe` with an install-location chooser |
+| **Mac · Apple Silicon** | `macOS-arm64` artifact → `.dmg` or `.zip` |
+| **Mac · Intel** | `macOS-x64` artifact → `.dmg` or `.zip` |
+
+<p align="center"><a href="https://github.com/Gurtejhundal/Traqu/actions/workflows/desktop.yml?query=branch%3Amain"><b>↓ Open desktop downloads</b></a></p>
+
+Open a **successful build**, scroll to **Artifacts**, and download the build for your computer. Extract the artifact ZIP to find the installer. GitHub requires sign-in to download artifacts; builds are retained for 30 days.
+
+The installed app includes its Python engine and interface. You can use it offline without installing Python or Node.js. Builds are currently unsigned; signing and Apple notarization are not configured yet.
+
+## See it in action
+
+<p align="center">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/screenshots/roadmap.png">
+    <img src="docs/screenshots/desktop-demo.gif" alt="Real Traqo desktop walkthrough: paste a roadmap, import its sections, complete tasks, and return to the library." width="1080">
+  </picture>
+</p>
+
+<p align="center"><sub>Real Electron captures · sample plans · no personal workspace data</sub></p>
+
+<table>
+  <tr><th>Your plans, together</th><th>One section, in focus</th></tr>
+  <tr>
+    <td valign="top"><a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Traqo library with three sample roadmaps and completion progress" width="460"></a></td>
+    <td valign="top"><a href="docs/screenshots/roadmap.png"><img src="docs/screenshots/roadmap.png" alt="A focused roadmap section with contents navigation, saved checkmarks, and progress" width="460"></a></td>
+  </tr>
+</table>
+
+<details>
+<summary>Take a closer look at importing a plan</summary>
+
+![Paste a roadmap or upload a document](docs/screenshots/import.png)
+
+</details>
+
+## A little less friction. A little more follow-through.
+
+| When your plan looks like… | Traqo helps you… |
+| --- | --- |
+| A long PDF, DOCX, or pasted chat response | Import it into sections and tasks |
+| Weeks, phases, sprints, or several parallel tracks | Keep a structure you can navigate |
+| Notes, tables, code, and supporting material | Keep useful context with the roadmap |
+| Too much to look at all at once | Choose a section and focus on the next step |
+| “I should probably revisit this” | Add notes, checklists, counters, bookmarks, labels, or due dates |
+| A plan you want to take elsewhere | Export to PDF or Word |
+| Something you want to keep to yourself | Work locally, with no account or hosted sign-in |
+
+**Your work stays on your computer.** The desktop app starts its own private local service and saves roadmaps in SQLite in your OS user-data folder. Updating the app keeps that folder separate from the installed program.
+
+Use **File → Show Data Folder** to find your workspace and **File → Show Logs** for diagnostics. On Linux and Windows, press **Alt** to reveal the menu.
+
+## Small shortcuts. Useful momentum.
+
+| Action | Linux / Windows | macOS |
+| --- | --- | --- |
+| New roadmap | `Ctrl + N` | `Cmd + N` |
+| Back to the library | `Ctrl + Shift + L` | `Cmd + Shift + L` |
+| Reload the workspace | `Ctrl + R` | `Cmd + R` |
+
+Native menus also provide clipboard actions, zoom, full-screen mode, and PDF/Word save dialogs. Traqo remembers your window size between launches.
+
+## Run from source
+
+For development, use **Node.js 24** and **Python 3.12**:
 
 ```bash
 npm ci
@@ -16,133 +108,43 @@ npm run setup
 npm start
 ```
 
-Build an installer for your current OS with `npm run dist`. Output goes to `release/`:
+Build an installer for your current OS with `npm run dist`. Output goes into `release/`. Each OS and CPU architecture needs its own native build; the desktop workflow handles Linux, Windows, Apple Silicon, and Intel Mac builds.
 
-| Platform | Installer |
+| Need the details? | Start here |
 | --- | --- |
-| Linux x64 | AppImage and Debian package |
-| Windows x64 | Setup executable with an install-location chooser |
-| macOS Apple Silicon / Intel | Separate DMG and ZIP builds |
+| Desktop architecture, builds, tests, and moving an existing database | [Desktop guide](docs/DESKTOP.md) |
+| Run the web app and API separately, or use the Windows browser launcher | [Development guide](docs/DEVELOPMENT.md) |
+| Source and regeneration notes for these animations | [README media](docs/readme/README.md) |
 
-The [Desktop builds workflow](https://github.com/Gurtejhundal/Traqu/actions/workflows/desktop.yml) builds and tests all four platform/architecture combinations. Download installers from a successful run's **Artifacts** section. Builds are unsigned; public distribution with trusted signatures needs Windows signing and Apple signing/notarization credentials.
-
-The desktop app starts its own private local service, saves your workspace in your OS user-data folder, remembers window size, and offers native menus and PDF/Word save dialogs. Use **File → Show Data Folder** to find your database and **File → Show Logs** for startup diagnostics. Press **Alt** to show the menu on Linux and Windows.
-
-![Roadmap library running in Electron](docs/screenshots/library.png)
+React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLite for local data. Electron for the desktop shell.
 
 <details>
-<summary>More desktop screenshots</summary>
+<summary>A few practical limits</summary>
 
-![Import a roadmap](docs/screenshots/import.png)
-
-![Track tasks in a focused section](docs/screenshots/roadmap.png)
+- PDFs need selectable text. Scanned image PDFs need OCR before import.
+- Traqo is a personal, single-user workspace. The local owner key is not multi-user authentication.
+- The desktop workspace starts separately from an existing web database; the [migration instructions](docs/DESKTOP.md#local-data-and-migration) explain how to preserve existing progress.
+- This version does not include cloud sync, automatic updates, or application-level database encryption.
 
 </details>
 
-See [desktop architecture, data migration, build instructions, and verification](docs/DESKTOP.md). The web setup below remains available.
+## Support the next update
 
-It supports pasted roadmap text and uploaded roadmap files. PDF import works when the PDF contains selectable text. Scanned image PDFs need OCR before upload.
+<p align="center">
+  <picture>
+    <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/support.png">
+    <img src="docs/readme/support.gif" alt="An animated controller for an optional side quest: support Traqo’s next update and the console fund." width="960">
+  </picture>
+</p>
 
-## About
+If Traqo helps you turn a plan into progress, you can help fuel the next update—or the ongoing PS5 side quest. Support is completely optional, and a GitHub star is appreciated too.
 
-Traqo is built for personal plans that are too large to manage as plain text. Import a roadmap from ChatGPT, PDF, DOCX, Markdown, or other text-based files, then track it as a structured checklist with sections, subsections, progress, search, and a contents panel for fast navigation.
+<p align="center">
+  <a href="docs/readme/upi-qr.png"><img src="docs/readme/upi-qr.png" alt="UPI payment QR for Gurtejbir Singh, reused unchanged from the .cnote README" width="205" height="205"></a><br>
+  <b>Scan with a UPI app · any amount helps.</b><br>
+  <sub>Gurtejbir Singh · <code>gurtejbir.29107@okhdfcbank</code></sub>
+</p>
 
-The app is designed for single-user local use. It removes hosted sign-in friction and focuses on turning messy roadmap documents into something you can actually follow day by day, month by month, or section by section.
+---
 
-## Features
-
-- Import roadmaps from pasted text.
-- Import DOCX and text-based files such as TXT, Markdown, JSON, CSV, YAML, RST, and logs.
-- Import readable-text PDFs with layout-aware table, heading, callout, list, and code detection.
-- Recognize week, phase, daily-checklist, matrix, dependency-tree, level, sprint, backward-plan, 30/60/90, and mixed parallel-track roadmap structures.
-- Preserve typed outcomes, milestones, deliverables, projects, KPIs, evidence, prerequisites, cadence, and exit criteria instead of flattening them into generic task text.
-- Keep multiple roadmap roots separated when one PDF contains more than one plan.
-- Keep supporting PDF material as preserved document blocks instead of turning every line into a task.
-- Add notes, checklists, counters, bookmarks, due dates, labels, code snippets, revision counters, and revisit markers from an inline `+` menu.
-- Apply a new block to one task, every task in its section, or the entire roadmap, then edit each copy independently.
-- Preserve task blocks through reloads and raw-structure edits.
-- Parse common ChatGPT roadmap formats into timeframe groups and tasks.
-- Navigate large roadmaps with section/subsection contents and current-location context.
-- Track task completion per roadmap.
-- Show completion progress on roadmap cards and detail pages.
-- Edit roadmap task structure after import.
-- Export a roadmap to PDF or Word from the roadmap detail page.
-- Scope roadmap, task, and timeframe access by a local owner header.
-
-## Tech Stack
-
-- Frontend: React, Vite, React Router, Lucide icons.
-- Backend: FastAPI, SQLAlchemy, Pydantic.
-- Database: SQLite locally, PostgreSQL-compatible via `DATABASE_URL`.
-- Auth: none. The app is configured for single-user local use.
-- API ownership: the frontend sends `X-Local-User-Id` so local roadmaps stay scoped to one owner key.
-
-## Setup
-
-### Backend
-
-```powershell
-cd backend
-python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m uvicorn main:app --reload
-```
-
-The API runs at `http://localhost:8000` by default.
-
-### One-click launcher
-
-On Windows, double-click `launcher.bat` or run it from PowerShell:
-
-```bat
-launcher.bat
-```
-
-The launcher requires Python 3.11+ and Node.js `^20.19.0` or `>=22.12.0`. It creates an isolated backend environment in `backend/.venv`, verifies exact backend packages and the locked frontend dependency tree, installs only when the environment fingerprint changes, starts FastAPI and Vite, verifies Traqo-specific readiness responses, and then opens `http://127.0.0.1:5173`. Runtime logs are stored in `%LOCALAPPDATA%\Traqo\logs`.
-
-To start without opening a browser, use:
-
-```bat
-launcher.bat -NoBrowser
-```
-
-The launcher runs Traqo in the background. Stop the services with:
-
-```bat
-launcher.bat -Stop
-```
-
-You can also open the graphical launcher directly:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\launcher.ps1
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm ci
-npm run dev
-```
-
-The app runs at the Vite URL printed in the terminal, usually `http://127.0.0.1:5173`.
-
-Set `VITE_API_URL` if the backend is not running on `http://127.0.0.1:8000`.
-
-## Checks
-
-```bash
-cd backend
-.venv\Scripts\python.exe -m pytest
-
-cd ../frontend
-npm test
-npm run lint
-npm run build
-```
-
-## Known Limits
-
-- PDF import extracts embedded text only. It reconstructs layout and repeated page chrome, but it does not OCR scanned documents.
-- The frontend uses a fixed local owner id. This is deliberate for personal use, not suitable for multi-user deployment.
+<p align="center"><b>Traqo</b> — plan. focus. follow through.<br><sub>Made by <a href="https://github.com/Gurtejhundal">Gurtejbir Singh</a> · your plans, at your pace.</sub></p>
