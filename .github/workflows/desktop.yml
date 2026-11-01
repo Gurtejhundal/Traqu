@@ -23,6 +23,8 @@ jobs:
           - { name: macOS Apple Silicon, os: macos-15, arch: arm64 }
           - { name: macOS Intel, os: macos-15-intel, arch: x64 }
     runs-on: ${{ matrix.os }}
+    env:
+      DEBUG: 'pw:browser'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

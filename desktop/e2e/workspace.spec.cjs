@@ -42,15 +42,18 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
   const errors = [];
 
   async function launch() {
+    const env = { ...process.env, TRAQO_DATA_DIR: dataDir };
+    // Remove this variable entirely: an empty Windows environment entry can
+    // still select Electron's Node mode instead of starting a desktop process.
+    delete env.ELECTRON_RUN_AS_NODE;
     application = await electron.launch({
-      // Resolve lazy Electron downloads here so their stdout cannot become part
-      // of Playwright's subprocess-based executable-path discovery on Windows.
+      // Setup provisions the executable before either tests or packaging use it.
       executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'),
       args: [
         ...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []),
         ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root]),
       ],
-      env: { ...process.env, ELECTRON_RUN_AS_NODE: '', TRAQO_DATA_DIR: dataDir },
+      env,
     });
     const page = await application.firstWindow();
     page.on('pageerror', (error) => errors.push(error.message));
@@ -106,9 +109,11 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     await expect(checks.first()).toBeVisible();
     await checks.nth(0).click();
     await expect(checks.nth(0)).toHaveAttribute('aria-pressed', 'true');
+    await expect(checks.nth(0)).toBeEnabled();
     await capture(page);
     await checks.nth(1).click();
     await expect(checks.nth(1)).toHaveAttribute('aria-pressed', 'true');
+    await expect(checks.nth(1)).toBeEnabled();
     await expect(page.getByRole('progressbar', { name: 'Roadmap completion', exact: true })).toHaveAttribute('aria-valuenow', '13');
     await capture(page, 'roadmap');
     await page.reload();
