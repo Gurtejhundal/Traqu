@@ -73,6 +73,16 @@ jobs:
         env:
           TRAQO_TEST_NO_SANDBOX: '1'
           TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/linux-unpacked/traqo-desktop'
+      - name: Test packaged app (Windows)
+        if: runner.os == 'Windows'
+        run: npm run test:desktop
+        env:
+          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/win-unpacked/Traqo.exe'
+      - name: Test packaged app (macOS)
+        if: runner.os == 'macOS'
+        run: npm run test:desktop
+        env:
+          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Traqo.app/Contents/MacOS/Traqo'
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:

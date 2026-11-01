@@ -10,4 +10,4 @@ const result = spawnSync(python, [
   'backend/desktop_server.py',
 ], { cwd: root, stdio: 'inherit' });
 if (result.error) throw result.error;
-process.exit(result.status || 0);
+process.exit(result.status ?? 1);

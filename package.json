@@ -30,6 +30,7 @@
     "appId": "io.github.gurtejhundal.traqo",
     "productName": "Traqo",
     "copyright": "Copyright © 2026 Gurtej Hundal",
+    "electronDist": "node_modules/electron/dist",
     "directories": { "output": "release", "buildResources": "desktop/resources" },
     "files": ["desktop/*.cjs", "desktop/*.html", "desktop/resources/icon.png", "!desktop/*.test.cjs"],
     "extraResources": [

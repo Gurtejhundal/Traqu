@@ -43,7 +43,9 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
 
   async function launch() {
     application = await electron.launch({
-      executablePath: process.env.TRAQO_TEST_EXECUTABLE || undefined,
+      // Resolve lazy Electron downloads here so their stdout cannot become part
+      // of Playwright's subprocess-based executable-path discovery on Windows.
+      executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'),
       args: [
         ...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []),
         ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root]),

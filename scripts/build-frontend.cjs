@@ -6,4 +6,4 @@ const result = spawnSync('npm', ['run', 'build', '--prefix', 'frontend'], {
   env: { ...process.env, VITE_API_URL: '/api', VITE_LOCAL_USER_ID: 'local_owner' },
 });
 if (result.error) throw result.error;
-process.exit(result.status || 0);
+process.exit(result.status ?? 1);

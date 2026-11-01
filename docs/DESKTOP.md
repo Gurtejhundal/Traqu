@@ -108,7 +108,7 @@ On Windows, use `..\.venv-desktop\Scripts\python.exe -m pytest -q` for the final
 npm run test:desktop
 ```
 
-The Playwright test opens the real Electron app with an isolated profile. It checks native menu navigation, roadmap import, task progress, reload/deep links, PDF and DOCX file signatures, restart persistence, rejection of unauthenticated API calls, hostile Host rejection, renderer isolation, and service shutdown. CI runs the same test against the packaged Linux executable, which verifies that the bundled Python runtime works without a system Python.
+The Playwright test opens the real Electron app with an isolated profile. It checks native menu navigation, roadmap import, task progress, reload/deep links, PDF and DOCX file signatures and re-imports, restart persistence, rejection of unauthenticated API calls, hostile Host rejection, renderer isolation, and service shutdown. CI runs the same test against the packaged executable on each OS, which verifies that the bundled Python runtime works without a system Python.
 
 For headless Linux CI, use `xvfb-run --auto-servernum npm run test:desktop`. `TRAQO_TEST_NO_SANDBOX=1` applies only an explicit test launch flag on CI hosts that cannot run Chromium's sandbox. The production app does not disable its sandbox.
 
