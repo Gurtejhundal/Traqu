@@ -2,6 +2,45 @@
 
 Traqo is a React and FastAPI workspace for importing roadmaps and tracking task progress over time.
 
+**Now a desktop app for Linux, Windows, and macOS.** The desktop edition bundles the interface, Python API, and SQLite storage. Installed apps work offline and do not require Python or Node.js.
+
+![Traqo desktop walkthrough](docs/screenshots/desktop-demo.gif)
+
+### Desktop quick start
+
+For development, install Node.js 24 and Python 3.12, then run from the repository root:
+
+```bash
+npm ci
+npm run setup
+npm start
+```
+
+Build an installer for your current OS with `npm run dist`. Output goes to `release/`:
+
+| Platform | Installer |
+| --- | --- |
+| Linux x64 | AppImage and Debian package |
+| Windows x64 | Setup executable with an install-location chooser |
+| macOS Apple Silicon / Intel | Separate DMG and ZIP builds |
+
+The [Desktop builds workflow](https://github.com/Gurtejhundal/Traqu/actions/workflows/desktop.yml) builds and tests all four platform/architecture combinations. Download installers from a successful run's **Artifacts** section. Builds are unsigned; public distribution with trusted signatures needs Windows signing and Apple signing/notarization credentials.
+
+The desktop app starts its own private local service, saves your workspace in your OS user-data folder, remembers window size, and offers native menus and PDF/Word save dialogs. Use **File → Show Data Folder** to find your database and **File → Show Logs** for startup diagnostics. Press **Alt** to show the menu on Linux and Windows.
+
+![Roadmap library running in Electron](docs/screenshots/library.png)
+
+<details>
+<summary>More desktop screenshots</summary>
+
+![Import a roadmap](docs/screenshots/import.png)
+
+![Track tasks in a focused section](docs/screenshots/roadmap.png)
+
+</details>
+
+See [desktop architecture, data migration, build instructions, and verification](docs/DESKTOP.md). The web setup below remains available.
+
 It supports pasted roadmap text and uploaded roadmap files. PDF import works when the PDF contains selectable text. Scanned image PDFs need OCR before upload.
 
 ## About

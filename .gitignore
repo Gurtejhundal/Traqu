@@ -5,6 +5,7 @@ __pycache__/
 *.pyo
 venv/
 .venv/
+.venv-desktop/
 env/
 
 # Environment Variables
@@ -19,6 +20,10 @@ env/
 # Build Output
 dist/
 build/
+release/
+test-results/
+playwright-report/
+.pytest_cache/
 tmp/
 
 # Local dev server logs

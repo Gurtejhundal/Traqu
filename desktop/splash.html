@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'">
+  <title>Traqo</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #fff; color: #191919; font: 15px/1.5 -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    main { text-align: center; animation: appear 400ms ease-out both; }
+    img { width: 72px; height: 72px; border-radius: 18px; }
+    h1 { margin: 18px 0 6px; font-size: 28px; letter-spacing: -1px; }
+    p { color: #787774; margin: 0; }
+    .track { width: 100px; height: 3px; margin: 30px auto 20px; overflow: hidden; border-radius: 3px; background: #f1f1ef; }
+    .track::after { content: ''; display: block; height: 100%; width: 35%; border-radius: inherit; background: #191919; animation: loading 1.3s ease-in-out infinite; }
+    small { color: #787774; font-size: 12px; }
+    @keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes loading { from { transform: translateX(-110%); } to { transform: translateX(400%); } }
+    @media (prefers-reduced-motion: reduce) { main, .track::after { animation: none; } .track::after { width: 100%; } }
+  </style>
+</head>
+<body><main><img src="resources/icon.png" alt=""><h1>Traqo</h1><p>Your plans, at your pace.</p><div class="track" role="status" aria-label="Opening your local workspace"></div><small>Opening your local workspace…</small></main></body>
+</html>

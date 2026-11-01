@@ -1,0 +1,56 @@
+{
+  "name": "traqo-desktop",
+  "version": "1.0.0",
+  "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
+  "homepage": "https://github.com/Gurtejhundal/Traqu",
+  "repository": { "type": "git", "url": "https://github.com/Gurtejhundal/Traqu.git" },
+  "author": { "name": "Gurtejbir Singh", "email": "149035823+Gurtejhundal@users.noreply.github.com" },
+  "private": true,
+  "main": "desktop/main.cjs",
+  "desktopName": "Traqo",
+  "engines": { "node": "^22.12.0 || >=24.0.0" },
+  "scripts": {
+    "setup": "node scripts/setup.cjs",
+    "build:frontend": "node scripts/build-frontend.cjs",
+    "build:backend": "node scripts/build-backend.cjs",
+    "start": "npm run build:frontend && electron .",
+    "start:built": "electron .",
+    "test": "node --test desktop/*.test.cjs",
+    "test:desktop": "playwright test",
+    "build": "npm run build:frontend && npm run build:backend",
+    "dist": "npm run build && electron-builder --publish never",
+    "pack": "npm run build && electron-builder --dir --publish never"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "electron": "45.2.1",
+    "electron-builder": "26.18.0"
+  },
+  "build": {
+    "appId": "io.github.gurtejhundal.traqo",
+    "productName": "Traqo",
+    "copyright": "Copyright © 2026 Gurtej Hundal",
+    "directories": { "output": "release", "buildResources": "desktop/resources" },
+    "files": ["desktop/*.cjs", "desktop/*.html", "desktop/resources/icon.png", "!desktop/*.test.cjs"],
+    "extraResources": [
+      { "from": "dist/backend", "to": "backend", "filter": ["**/*"] },
+      { "from": "frontend/dist", "to": "frontend", "filter": ["**/*"] }
+    ],
+    "artifactName": "Traqo-${version}-${os}-${arch}.${ext}",
+    "linux": {
+      "target": ["AppImage", "deb"],
+      "category": "Office",
+      "syncDesktopName": true,
+      "icon": "desktop/resources/icon.png",
+      "desktop": { "entry": { "StartupWMClass": "Traqo", "Comment": "Import plans. Track progress. Work locally." } }
+    },
+    "win": { "target": ["nsis"], "icon": "desktop/resources/icon.png" },
+    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true },
+    "mac": {
+      "target": ["dmg", "zip"],
+      "category": "public.app-category.productivity",
+      "icon": "desktop/resources/icon.png",
+      "hardenedRuntime": true
+    }
+  }
+}
