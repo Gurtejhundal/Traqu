@@ -4,6 +4,8 @@ __pycache__/
 *.pyc
 *.pyo
 venv/
+.venv/
+.venv-desktop/
 env/
 
 # Environment Variables
@@ -18,12 +20,19 @@ env/
 # Build Output
 dist/
 build/
+release/
+test-results/
+playwright-report/
+.pytest_cache/
+tmp/
 
 # Local dev server logs
 *_dev.*.log
+*.log
 
 # IDEs
 .vscode/
 .idea/
 .DS_Store
 .vercel
+.env*
