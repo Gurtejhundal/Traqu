@@ -82,7 +82,7 @@ jobs:
         if: runner.os == 'macOS'
         run: npm run test:desktop
         env:
-          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Traqo.app/Contents/MacOS/Traqo'
+          TRAQO_TEST_EXECUTABLE: "${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Traqo.app/Contents/MacOS/Traqo"
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
