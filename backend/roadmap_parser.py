@@ -1,6 +1,7 @@
 import json
 import math
 import re
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 
@@ -456,14 +457,22 @@ def parse_tasks(text: str) -> List[Dict[str, object]]:
         if _looks_like_task(line, current_timeframe != "General"):
             title = _clean_task(line)
             if title:
-                tasks.append(
-                    {
-                        "title": title,
-                        "timeframe": current_timeframe,
-                        "is_done": CHECKED_TASK_RE.match(line) is not None,
-                        "granularity": _granularity(current_timeframe),
-                    }
-                )
+                task = {
+                    "title": title,
+                    "timeframe": current_timeframe,
+                    "is_done": CHECKED_TASK_RE.match(line) is not None,
+                    "granularity": _granularity(current_timeframe),
+                }
+                # A single explicit ISO date in a heading is unambiguous.
+                # Multiple dates/ranges retain their original label only.
+                dates = re.findall(r'\b\d{4}-\d{2}-\d{2}\b', current_timeframe)
+                if len(dates) == 1:
+                    try:
+                        value = date.fromisoformat(dates[0]).isoformat()
+                        task.update(start_date=value, end_date=value, granularity='day')
+                    except ValueError:
+                        pass
+                tasks.append(task)
 
     if not tasks:
         sentences = [

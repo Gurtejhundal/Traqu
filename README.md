@@ -33,18 +33,32 @@ The study plan is in a PDF. The project roadmap is in a chat. The next step is s
 
 ## Get the app
 
-| Your computer | Pick this build |
+| Your computer | Direct download |
 | --- | --- |
-| **Linux x64** | AppImage for a portable app, or `.deb` for Debian/Ubuntu |
-| **Windows x64** | Setup `.exe` with an install-location chooser |
-| **Mac · Apple Silicon** | `macOS-arm64` artifact → `.dmg` or `.zip` |
-| **Mac · Intel** | `macOS-x64` artifact → `.dmg` or `.zip` |
+| **Windows x64** | [Setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Windows-x64.exe) |
+| **Linux x64** | [AppImage](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Linux-x64.AppImage) · [Debian / Ubuntu .deb](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Linux-x64.deb) |
+| **Mac · Apple Silicon** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-arm64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-arm64.zip) |
+| **Mac · Intel** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-x64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-x64.zip) |
 
-<p align="center"><a href="https://github.com/Gurtejhundal/Traqu/actions/workflows/desktop.yml?query=branch%3Amain"><b>↓ Open desktop downloads</b></a></p>
+<p align="center"><a href="https://traqu.vercel.app/downloads"><b>↓ Desktop download guide</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest"><b>Release notes &amp; checksums</b></a></p>
 
-Open a **successful build**, scroll to **Artifacts**, and download the build for your computer. Extract the artifact ZIP to find the installer. GitHub requires sign-in to download artifacts; builds are retained for 30 days.
+Download directly: no Actions artifact ZIP or GitHub sign-in required. Releases stay available after temporary CI artifacts expire. Each release publishes only after source and packaged-app tests pass on all four native targets.
 
-The installed app includes its Python engine and interface. You can use it offline without installing Python or Node.js. Builds are currently unsigned; signing and Apple notarization are not configured yet.
+**Install:** run the Windows setup; on Mac, open the DMG and drag Traqo to Applications; on Debian/Ubuntu install the DEB with your package manager. For AppImage, enable execution in file properties (or `chmod +x Traqo-Linux-x64.AppImage`) and open it. AppImage may need FUSE 2 from your distribution.
+
+The desktop app includes its Python engine and interface, works offline, and saves to your computer. Baselines: Windows 10/11 x64, macOS 13+ (Intel or Apple Silicon), and Linux x64 builds made on Ubuntu 22.04. Linux/Windows ARM installers are not available yet.
+
+Builds are **unsigned**: Windows may show SmartScreen and macOS may require approval under System Settings → Privacy & Security. Signing and Apple notarization are not configured. See [Electron platform support](https://github.com/electron/electron#platform-support) and the [macOS 13 minimum introduced in Electron 44](https://www.electronjs.org/blog/electron-44-0).
+
+## Plan with an AI agent
+
+[Open the agent guide](https://traqu.vercel.app/agents) · [Download SKILL.md](frontend/public/agents/SKILL.md) · [JSON template](frontend/public/agents/roadmap-example.json) · [Markdown template](frontend/public/agents/roadmap-example.md)
+
+Give your agent a shared format for dates, tasks, optional work, and notes. JSON preserves the most detail; a selectable-text PDF can accompany it. Traqo uses a deterministic, layout-aware parser, not a trained language model. The skill describes formats covered by regression tests.
+
+<img src="docs/screenshots/agents.png" alt="Traqo agent guide with a downloadable skill, copyable prompt and JSON example." width="1080">
+
+Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
 
 ## See it in action
 

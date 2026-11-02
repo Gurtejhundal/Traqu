@@ -1,0 +1,11 @@
+# Traqo
+
+A roadmap workspace with a deterministic, layout-aware document importer.
+
+- [Agent guide](https://traqu.vercel.app/agents): Supported authoring formats and copyable prompt.
+- [Roadmap skill](https://traqu.vercel.app/agents/SKILL.md): Instructions for generating importable plans.
+- [JSON example](https://traqu.vercel.app/agents/roadmap-example.json): Dates, tasks, metadata, notes and document context.
+- [Markdown example](https://traqu.vercel.app/agents/roadmap-example.md): Simple dated checkbox sections.
+- [Desktop downloads](https://traqu.vercel.app/downloads): Windows, Linux, and macOS installers.
+
+Prefer JSON for reliable import. A presentation PDF should use selectable text and may include a matching JSON sidecar. Scans need OCR. Dates schedule sections; time-slot properties do not create calendar notifications. The desktop app stores data locally; the hosted web app uses its backend storage.

@@ -104,3 +104,35 @@ jobs:
           name: diagnostics-${{ runner.os }}-${{ matrix.arch }}
           path: test-results/
           if-no-files-found: ignore
+
+  release:
+    name: Publish desktop downloads
+    needs: desktop
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    concurrency:
+      group: desktop-release
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: Traqo-*
+          merge-multiple: true
+          path: installers
+      - name: Publish versioned release with stable download names
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          if gh release view "v$VERSION" >/dev/null 2>&1; then
+            echo "Release v$VERSION already exists; bump package.json for a new desktop release."
+          else
+            node scripts/publish-desktop.cjs installers
+          fi

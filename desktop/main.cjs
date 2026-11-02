@@ -112,8 +112,16 @@ async function launch() {
     onExit: () => { if (!starting && !quitting) fail(new Error('The local service stopped unexpectedly. Reopen Traqo. Your saved roadmaps remain in the data folder.')); },
   });
   if (quitting) { await backend.stop(); return; }
-  session.defaultSession.setPermissionRequestHandler((_contents, _permission, callback) => callback(false));
-  session.defaultSession.setPermissionCheckHandler(() => false);
+  // Copy buttons need sanitized clipboard writes. Keep reads and all other
+  // permissions denied, and accept writes only from the private workspace.
+  session.defaultSession.setPermissionRequestHandler((contents, permission, callback, details) => callback(
+    contents === window?.webContents && permission === 'clipboard-sanitized-write'
+      && isWorkspaceURL(details.requestingUrl || contents.getURL(), backend.origin)
+  ));
+  session.defaultSession.setPermissionCheckHandler((contents, permission, origin) => (
+    contents === window?.webContents && permission === 'clipboard-sanitized-write'
+      && isWorkspaceURL(origin, backend.origin)
+  ));
   session.defaultSession.webRequest.onBeforeSendHeaders((details, callback) => {
     // Keep the credential in the main process, outside renderer JavaScript.
     for (const key of Object.keys(details.requestHeaders)) {
@@ -123,7 +131,7 @@ async function launch() {
     callback({ requestHeaders: details.requestHeaders });
   });
   session.defaultSession.on('will-download', (_event, item) => {
-    item.setSaveDialogOptions({ title: 'Export roadmap', defaultPath: path.join(app.getPath('downloads'), path.basename(item.getFilename())) });
+    item.setSaveDialogOptions({ title: 'Save file', defaultPath: path.join(app.getPath('downloads'), path.basename(item.getFilename())) });
   });
   starting = false;
   if (window && !window.isDestroyed()) await window.loadURL(backend.origin);

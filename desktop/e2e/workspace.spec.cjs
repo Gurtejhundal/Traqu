@@ -91,6 +91,16 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     expect(await page.evaluate(() => typeof window.process)).toBe('undefined');
     await capture(page);
 
+    // Agent instructions are served locally; the guide also survives deep reload.
+    await page.getByRole('link', { name: 'Agent guide', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'A better plan. A cleaner import.' })).toBeVisible();
+    await page.getByRole('button', { name: 'Copy agent prompt' }).click();
+    await expect(page.getByRole('button', { name: 'Prompt copied' })).toBeVisible();
+    expect(await page.evaluate(async () => (await fetch('/agents/SKILL.md')).text())).toContain('name: traqo-roadmaps');
+    await page.getByRole('link', { name: 'Downloads', exact: true }).click();
+    await page.reload();
+    await expect(page.getByRole('link', { name: 'Setup .exe', exact: true })).toHaveAttribute('href', /releases\/latest\/download\/Traqo-Windows-x64.exe$/);
+
     // Invoke the native menu directly; synthetic key events depend on OS focus.
     await newRoadmap();
     await expect(page.getByRole('heading', { name: 'Import a plan' })).toBeVisible();

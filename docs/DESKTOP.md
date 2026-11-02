@@ -64,7 +64,7 @@ This migration preserves records using the default `local_owner` key. A web inst
 
 The desktop API requires a random 256-bit session credential. Electron attaches it only to requests for the exact local origin; renderer JavaScript does not receive it. Other local processes and ordinary browser tabs receive 401 for API requests without that credential. Host validation rejects unrelated hostnames to limit DNS rebinding.
 
-The renderer uses `sandbox: true`, context isolation, disabled Node integration, a Content Security Policy, denied permission requests, and blocked webviews. External HTTP(S)/mail links open in the system handler. Other protocols are rejected. External pages cannot navigate into the privileged app window. These settings follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
+The renderer uses `sandbox: true`, context isolation, disabled Node integration, a Content Security Policy, permission requests denied except sanitized clipboard writes from the private workspace, and blocked webviews. External HTTP(S)/mail links open in the system handler. Other protocols are rejected. External pages cannot navigate into the privileged app window. These settings follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
 
 This is a single-user desktop workspace. SQLite is stored as a normal local file, without application-level encryption. The web API's existing local-owner header is not multi-user authentication. The desktop session gate applies only to the desktop host; the ordinary web backend retains its current behavior.
 
@@ -88,9 +88,9 @@ npm run dist     # Installers in release/
 
 Build on the target OS and CPU architecture. The Python executable and native PDF/crypto dependencies cannot be cross-compiled by simply changing an Electron target flag. The workflow uses Ubuntu 22.04 x64, Windows x64, macOS arm64, and macOS Intel runners. Linux builds made on a newer local distribution may require newer system libraries than the Ubuntu-built artifacts.
 
-Installer output follows `Traqo-1.0.0-<os>-<arch>.<ext>`. macOS DMG and ZIP artifacts are separate for Apple Silicon and Intel. Linux builds provide AppImage and `.deb`; Windows builds provide an NSIS installer. Binary resources live outside the ASAR archive using [electron-builder extraResources](https://www.electron.build/docs/contents/).
+Installer output uses stable release names: `Traqo-Windows-x64.exe`, `Traqo-Linux-x64.AppImage`, `Traqo-Linux-x64.deb`, and `Traqo-macOS-<arm64|x64>.<dmg|zip>`. macOS DMG and ZIP artifacts are separate for Apple Silicon and Intel. Linux builds provide AppImage and `.deb`; Windows builds provide an NSIS installer. Binary resources live outside the ASAR archive using [electron-builder extraResources](https://www.electron.build/docs/contents/).
 
-The workflow creates downloadable build artifacts for 30 days. It does not automatically create a public GitHub Release. Signing is disabled in the default CI workflow. Trusted Windows signatures and Apple signing/notarization must be configured before a signed public release; signing credentials are not included in this repository.
+The workflow retains CI artifacts for 30 days and, after every native test passes on main, publishes a public GitHub Release for the package version with seven installers and SHA-256 checksums. An existing release is never overwritten; bump package.json for the next version. Direct `/releases/latest/download/<filename>` links require no GitHub sign-in. Signing is disabled in the default CI workflow. Trusted Windows signatures and Apple signing/notarization must be configured before a signed public release; signing credentials are not included in this repository.
 
 ## Verification and media
 
@@ -112,7 +112,7 @@ The Playwright test opens the real Electron app with an isolated profile. It che
 
 For headless Linux CI, use `xvfb-run --auto-servernum npm run test:desktop`. `TRAQO_TEST_NO_SANDBOX=1` applies only an explicit test launch flag on CI hosts that cannot run Chromium's sandbox. The production app does not disable its sandbox.
 
-The screenshots in this repository are real Electron renderer captures with sample plans in a disposable profile. Regenerate them with:
+The original workspace screenshots are real Electron renderer captures with sample plans in a disposable profile. The agent-guide and download-page screenshots are real browser captures; those pages also run inside Electron. Regenerate them with:
 
 ```bash
 TRAQO_CAPTURE_DOCS=1 npm run test:desktop
@@ -127,3 +127,7 @@ The second command needs `ffmpeg` on PATH. It creates a looping GIF from the cap
 - This version does not include an automatic updater, cloud sync, or encrypted storage.
 - Installers are unsigned until signing credentials are configured.
 - Each platform's CI result is the evidence for its build; a Linux test cannot establish that Windows or macOS works.
+
+## Resource improvements in 1.1
+
+Route pages load on demand; the initial production JavaScript chunk decreased from 338 KB to 246 KB (uncompressed), while PDF/Word export libraries remain deferred until export. PDF import releases per-page caches rather than retaining the entire document's character/graphics caches. See [the measured parser benchmark](PDF_IMPORT.md) for the memory/time tradeoff. These are local Linux measurements, not cross-platform performance certification.

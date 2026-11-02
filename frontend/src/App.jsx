@@ -1,21 +1,29 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import Navbar from './components/Navbar'
-import RoadmapView from './pages/RoadmapView'
 import Home from './pages/Home'
-import Import from './pages/Import'
-import Edit from './pages/Edit'
 import './index.css'
+
+const RoadmapView = lazy(() => import('./pages/RoadmapView'))
+const Import = lazy(() => import('./pages/Import'))
+const Edit = lazy(() => import('./pages/Edit'))
+const Agents = lazy(() => import('./pages/Agents'))
+const Downloads = lazy(() => import('./pages/Downloads'))
 
 function AppRoutes() {
     return (
         <div className="page-content">
-            <Routes>
+            <Suspense fallback={<div className="loading-state" role="status">Opening your workspace…</div>}>
+              <Routes>
                 <Route path="/" element={<Home />} />
                 <Route path="/import" element={<Import />} />
                 <Route path="/roadmap/:id" element={<RoadmapView />} />
                 <Route path="/edit/:id" element={<Edit />} />
+                <Route path="/agents" element={<Agents />} />
+                <Route path="/downloads" element={<Downloads />} />
                 <Route path="*" element={<Home />} />
-            </Routes>
+              </Routes>
+            </Suspense>
         </div>
     )
 }

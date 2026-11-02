@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Plus, Library } from 'lucide-react'
+import { Plus, Library, Sparkles, ArrowDownToLine } from 'lucide-react'
 import TraqoLogo from './TraqoLogo'
 
 export default function Navbar() {
@@ -7,6 +7,8 @@ export default function Navbar() {
     const links = [
         { path: '/', label: 'Library', icon: Library },
         { path: '/import', label: 'New', icon: Plus },
+        { path: '/agents', label: 'Agent guide', icon: Sparkles },
+        { path: '/downloads', label: 'Downloads', icon: ArrowDownToLine },
     ]
 
     return (

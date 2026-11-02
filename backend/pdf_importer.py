@@ -14,6 +14,8 @@ import re
 from statistics import median
 from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple
 
+from pdf_schedule import scheduled_page_tasks
+
 
 MAX_CELL_LENGTH = 12_000
 MAX_PDF_PAGES = 250
@@ -505,6 +507,7 @@ def _line_metadata(page: Any) -> List[Dict[str, Any]]:
             {
                 "text": text,
                 "x0": float(raw.get("x0") or 0),
+                "x1": float(raw.get("x1") or raw.get("x0") or 0),
                 "top": float(raw.get("top") or 0),
                 "bottom": float(raw.get("bottom") or raw.get("top") or 0),
                 "size": max(sizes, default=0),
@@ -1349,6 +1352,9 @@ def parse_pdf_document(content: bytes) -> PdfImportResult:
             _enforce_pdf_limit("extracted text line", text_line_count, MAX_PDF_TEXT_LINES)
             page_lines.append(lines)
             page_heights.append(float(page.height))
+            # Keep lightweight line metadata, rather than every page's parsed
+            # character/graphics cache, resident throughout a large import.
+            page.close()
 
         recurring = _recurring_margin_lines(page_lines, page_heights)
         tasks: List[Dict[str, Any]] = []
@@ -1371,6 +1377,13 @@ def parse_pdf_document(content: bytes) -> PdfImportResult:
             sizes = [line["size"] for line in lines if line["size"] > 0]
             body_size = median(sizes) if sizes else 10.0
             tables = page.find_tables() or []
+            # A page background rectangle can be reported as one huge table.
+            # It has no column boundaries and must not hide all page text.
+            tables = [table for table in tables if not (
+                table.bbox[2] - table.bbox[0] >= float(page.width) * .9
+                and table.bbox[3] - table.bbox[1] >= float(page.height) * .9
+                and all(len(row.cells) <= 1 for row in table.rows)
+            )]
             bboxes = [table.bbox for table in tables]
             outline_elements.extend(_page_text_elements(lines, bboxes, page_number, body_size, recurring))
             _enforce_pdf_limit(
@@ -1379,6 +1392,20 @@ def parse_pdf_document(content: bytes) -> PdfImportResult:
                 MAX_OUTLINE_ELEMENTS,
             )
             previous_document_title = list_context.document_title
+            excluded_schedule_lines = [line for line in lines if (
+                _margin_signature(line['text']) in recurring
+                or (line['top'] >= float(page.height) - 35 and not re.search(r'\d{1,2}:\d{2}', line['text']))
+            )]
+            scheduled_tasks = scheduled_page_tasks(lines, page_number, page, excluded_schedule_lines)
+            if scheduled_tasks is not None:
+                tasks.extend(scheduled_tasks)
+                _enforce_pdf_limit("semantic task", len(tasks), MAX_PDF_TASKS)
+                # The source outline above remains intact, including prose;
+                # do not parse these same time slots again as generic lists.
+                table_schema = None
+                table_task_context = _TableTaskContext()
+                page.close()
+                continue
             tasks.extend(
                 _page_list_tasks(
                     lines,
@@ -1476,6 +1503,8 @@ def parse_pdf_document(content: bytes) -> PdfImportResult:
                     len(outline_elements),
                     MAX_OUTLINE_ELEMENTS,
                 )
+
+            page.close()
 
         text = "\n\n".join(page_texts).strip()
         tasks.sort(

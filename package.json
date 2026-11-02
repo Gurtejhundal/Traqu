@@ -1,14 +1,22 @@
 {
   "name": "traqo-desktop",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
-  "repository": { "type": "git", "url": "https://github.com/Gurtejhundal/Traqu.git" },
-  "author": { "name": "Gurtejbir Singh", "email": "149035823+Gurtejhundal@users.noreply.github.com" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Gurtejhundal/Traqu.git"
+  },
+  "author": {
+    "name": "Gurtejbir Singh",
+    "email": "149035823+Gurtejhundal@users.noreply.github.com"
+  },
   "private": true,
   "main": "desktop/main.cjs",
   "desktopName": "Traqo",
-  "engines": { "node": "^22.12.0 || >=24.0.0" },
+  "engines": {
+    "node": "^22.12.0 || >=24.0.0"
+  },
   "scripts": {
     "setup": "node scripts/setup.cjs",
     "build:frontend": "node scripts/build-frontend.cjs",
@@ -31,27 +39,71 @@
     "productName": "Traqo",
     "copyright": "Copyright © 2026 Gurtej Hundal",
     "electronDist": "node_modules/electron/dist",
-    "directories": { "output": "release", "buildResources": "desktop/resources" },
-    "files": ["desktop/*.cjs", "desktop/*.html", "desktop/resources/icon.png", "!desktop/*.test.cjs"],
+    "directories": {
+      "output": "release",
+      "buildResources": "desktop/resources"
+    },
+    "files": [
+      "desktop/*.cjs",
+      "desktop/*.html",
+      "desktop/resources/icon.png",
+      "!desktop/*.test.cjs"
+    ],
     "extraResources": [
-      { "from": "dist/backend", "to": "backend", "filter": ["**/*"] },
-      { "from": "frontend/dist", "to": "frontend", "filter": ["**/*"] }
+      {
+        "from": "dist/backend",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "frontend/dist",
+        "to": "frontend",
+        "filter": [
+          "**/*"
+        ]
+      }
     ],
     "artifactName": "Traqo-${version}-${os}-${arch}.${ext}",
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": [
+        "AppImage",
+        "deb"
+      ],
       "category": "Office",
       "syncDesktopName": true,
       "icon": "desktop/resources/icon.png",
-      "desktop": { "entry": { "StartupWMClass": "Traqo", "Comment": "Import plans. Track progress. Work locally." } }
+      "desktop": {
+        "entry": {
+          "StartupWMClass": "Traqo",
+          "Comment": "Import plans. Track progress. Work locally."
+        }
+      },
+      "artifactName": "Traqo-Linux-x64.${ext}"
     },
-    "win": { "target": ["nsis"], "icon": "desktop/resources/icon.png" },
-    "nsis": { "oneClick": false, "perMachine": false, "allowToChangeInstallationDirectory": true, "createDesktopShortcut": true },
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "desktop/resources/icon.png",
+      "artifactName": "Traqo-Windows-${arch}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
     "mac": {
-      "target": ["dmg", "zip"],
+      "target": [
+        "dmg",
+        "zip"
+      ],
       "category": "public.app-category.productivity",
       "icon": "desktop/resources/icon.png",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "artifactName": "Traqo-macOS-${arch}.${ext}"
     }
   }
 }
