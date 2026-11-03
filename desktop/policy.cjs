@@ -1,3 +1,14 @@
+const { existsSync } = require('node:fs');
+const path = require('node:path');
+
+
+function workspaceDirectoryOverride(appData, override) {
+  if (override) return path.resolve(override);
+  const current = path.join(appData, 'Traqu', 'roadmap.db');
+  const legacy = path.join(appData, 'Traqo');
+  return !existsSync(current) && existsSync(path.join(legacy, 'roadmap.db')) ? legacy : null;
+}
+
 function isWorkspaceURL(url, origin) {
   try { return new URL(url).origin === origin; } catch { return false; }
 }
@@ -12,4 +23,4 @@ function validWindowState(state) {
   return { width: state.width, height: state.height, maximized: state.maximized === true };
 }
 
-module.exports = { isWorkspaceURL, isExternalURL, validWindowState };
+module.exports = { isWorkspaceURL, isExternalURL, validWindowState, workspaceDirectoryOverride };

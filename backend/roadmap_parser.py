@@ -344,7 +344,7 @@ def _json_document_elements(payload: Any) -> List[Dict[str, object]]:
 
 
 def parse_json_roadmap(text: str) -> Optional[Dict[str, List[Dict[str, object]]]]:
-    """Parse Traqo's JSON interchange format without losing roadmap metadata."""
+    """Parse Traqu's JSON interchange format without losing roadmap metadata."""
     try:
         payload = json.loads(text)
     except json.JSONDecodeError:

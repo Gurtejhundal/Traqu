@@ -1,4 +1,4 @@
-# Archived design direction — Traqo Soft Workspace
+# Archived design direction — Traqu Soft Workspace
 
 This file preserves the superseded neumorphic direction from August 2026.
 

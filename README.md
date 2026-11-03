@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/hero.png">
-    <img src="docs/readme/hero.gif" alt="Traqo — big plans, small steady wins. A gently animated roadmap illustration in Traqo’s white-and-ink design." width="1200">
+    <img src="docs/readme/hero.gif" alt="Traqu — big plans, small steady wins. A gently animated roadmap illustration in Traqu’s white-and-ink design." width="1200">
   </picture>
 </p>
 
@@ -11,7 +11,7 @@
   <a href="#get-the-app"><b>↓ Get the app</b></a> &nbsp; · &nbsp;
   <a href="#see-it-in-action"><b>See it in action</b></a> &nbsp; · &nbsp;
   <a href="#run-from-source"><b>Run from source</b></a> &nbsp; · &nbsp;
-  <a href="#support-the-next-update"><b>The side quest 🎮</b></a>
+  <a href="#buy-me-a-coffee"><b>Buy me a coffee ☕</b></a>
 </p>
 
 <p align="center"><code>Linux · Windows · macOS</code> &nbsp; <code>offline ready</code> &nbsp; <code>no account</code> &nbsp; <code>saved on your computer</code></p>
@@ -22,7 +22,7 @@
 
 The study plan is in a PDF. The project roadmap is in a chat. The next step is somewhere on page 37.
 
-**Traqo gives the plan a place to live.** Import it, keep its sections and useful context, then work through one clear area at a time. Check something off. Add a note. Come back tomorrow with your progress still there.
+**Traqu gives the plan a place to live.** Import it, keep its sections and useful context, then work through one clear area at a time. Check something off. Add a note. Come back tomorrow with your progress still there.
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/flow.png">
@@ -35,16 +35,16 @@ The study plan is in a PDF. The project roadmap is in a chat. The next step is s
 
 | Your computer | Direct download |
 | --- | --- |
-| **Windows x64** | [Setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Windows-x64.exe) |
-| **Linux x64** | [AppImage](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Linux-x64.AppImage) · [Debian / Ubuntu .deb](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-Linux-x64.deb) |
-| **Mac · Apple Silicon** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-arm64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-arm64.zip) |
-| **Mac · Intel** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-x64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqo-macOS-x64.zip) |
+| <img src="frontend/public/os/windows.svg" width="16" height="16" alt=""> **Windows x64** | [Setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-x64.exe) |
+| <img src="frontend/public/os/linux.svg" width="16" height="16" alt=""> **Linux x64** | [AppImage](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.AppImage) · [Debian / Ubuntu .deb](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.deb) |
+| <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Apple Silicon** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.zip) |
+| <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Intel** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.zip) |
 
 <p align="center"><a href="https://traqu.vercel.app/downloads"><b>↓ Desktop download guide</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest"><b>Release notes &amp; checksums</b></a></p>
 
 Download directly: no Actions artifact ZIP or GitHub sign-in required. Releases stay available after temporary CI artifacts expire. Each release publishes only after source and packaged-app tests pass on all four native targets.
 
-**Install:** run the Windows setup; on Mac, open the DMG and drag Traqo to Applications; on Debian/Ubuntu install the DEB with your package manager. For AppImage, enable execution in file properties (or `chmod +x Traqo-Linux-x64.AppImage`) and open it. AppImage may need FUSE 2 from your distribution.
+**Install:** run the Windows setup; on Mac, open the DMG and drag Traqu to Applications; on Debian/Ubuntu install the DEB with your package manager. For AppImage, enable execution in file properties (or `chmod +x Traqu-Linux-x64.AppImage`) and open it. AppImage may need FUSE 2 from your distribution.
 
 The desktop app includes its Python engine and interface, works offline, and saves to your computer. Baselines: Windows 10/11 x64, macOS 13+ (Intel or Apple Silicon), and Linux x64 builds made on Ubuntu 22.04. Linux/Windows ARM installers are not available yet.
 
@@ -54,9 +54,9 @@ Builds are **unsigned**: Windows may show SmartScreen and macOS may require appr
 
 [Open the agent guide](https://traqu.vercel.app/agents) · [Download SKILL.md](frontend/public/agents/SKILL.md) · [JSON template](frontend/public/agents/roadmap-example.json) · [Markdown template](frontend/public/agents/roadmap-example.md)
 
-Give your agent a shared format for dates, tasks, optional work, and notes. JSON preserves the most detail; a selectable-text PDF can accompany it. Traqo uses a deterministic, layout-aware parser, not a trained language model. The skill describes formats covered by regression tests.
+Give your agent a shared format for dates, tasks, optional work, and notes. JSON preserves the most detail; a selectable-text PDF can accompany it. Traqu uses a deterministic, layout-aware parser, not a trained language model. The skill describes formats covered by regression tests.
 
-<img src="docs/screenshots/agents.png" alt="Traqo agent guide with a downloadable skill, copyable prompt and JSON example." width="1080">
+<img src="docs/screenshots/agents.png" alt="Traqu agent guide with a downloadable skill, copyable prompt and JSON example." width="1080">
 
 Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
 
@@ -65,7 +65,7 @@ Dated daily planners now keep individual time slots, weekly context, durations, 
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/screenshots/roadmap.png">
-    <img src="docs/screenshots/desktop-demo.gif" alt="Real Traqo desktop walkthrough: paste a roadmap, import its sections, complete tasks, and return to the library." width="1080">
+    <img src="docs/screenshots/desktop-demo.gif" alt="Real Traqu desktop walkthrough: paste a roadmap, import its sections, complete tasks, and return to the library." width="1080">
   </picture>
 </p>
 
@@ -74,7 +74,7 @@ Dated daily planners now keep individual time slots, weekly context, durations, 
 <table>
   <tr><th>Your plans, together</th><th>One section, in focus</th></tr>
   <tr>
-    <td valign="top"><a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Traqo library with three sample roadmaps and completion progress" width="460"></a></td>
+    <td valign="top"><a href="docs/screenshots/library.png"><img src="docs/screenshots/library.png" alt="Traqu library with three sample roadmaps and completion progress" width="460"></a></td>
     <td valign="top"><a href="docs/screenshots/roadmap.png"><img src="docs/screenshots/roadmap.png" alt="A focused roadmap section with contents navigation, saved checkmarks, and progress" width="460"></a></td>
   </tr>
 </table>
@@ -88,7 +88,7 @@ Dated daily planners now keep individual time slots, weekly context, durations, 
 
 ## A little less friction. A little more follow-through.
 
-| When your plan looks like… | Traqo helps you… |
+| When your plan looks like… | Traqu helps you… |
 | --- | --- |
 | A long PDF, DOCX, or pasted chat response | Import it into sections and tasks |
 | Weeks, phases, sprints, or several parallel tracks | Keep a structure you can navigate |
@@ -110,7 +110,7 @@ Use **File → Show Data Folder** to find your workspace and **File → Show Log
 | Back to the library | `Ctrl + Shift + L` | `Cmd + Shift + L` |
 | Reload the workspace | `Ctrl + R` | `Cmd + R` |
 
-Native menus also provide clipboard actions, zoom, full-screen mode, and PDF/Word save dialogs. Traqo remembers your window size between launches.
+Native menus also provide clipboard actions, zoom, full-screen mode, and PDF/Word save dialogs. Traqu remembers your window size between launches.
 
 ## Run from source
 
@@ -136,29 +136,29 @@ React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLi
 <summary>A few practical limits</summary>
 
 - PDFs need selectable text. Scanned image PDFs need OCR before import.
-- Traqo is a personal, single-user workspace. The local owner key is not multi-user authentication.
+- Traqu is a personal, single-user workspace. The local owner key is not multi-user authentication.
 - The desktop workspace starts separately from an existing web database; the [migration instructions](docs/DESKTOP.md#local-data-and-migration) explain how to preserve existing progress.
 - This version does not include cloud sync, automatic updates, or application-level database encryption.
 
 </details>
 
-## Support the next update
+## Buy me a coffee
 
 <p align="center">
   <picture>
     <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/support.png">
-    <img src="docs/readme/support.gif" alt="An animated controller for an optional side quest: support Traqo’s next update and the console fund." width="960">
+    <img src="docs/readme/support.gif" alt="A gently animated coffee cup: an optional way to support Traqu." width="960">
   </picture>
 </p>
 
-If Traqo helps you turn a plan into progress, you can help fuel the next update—or the ongoing PS5 side quest. Support is completely optional, and a GitHub star is appreciated too.
+If Traqu makes your day a little easier, you can buy me a coffee. Thanks for supporting the next update. A GitHub star is always welcome too.
 
 <p align="center">
   <a href="docs/readme/upi-qr.png"><img src="docs/readme/upi-qr.png" alt="UPI payment QR for Gurtejbir Singh, reused unchanged from the .cnote README" width="205" height="205"></a><br>
-  <b>Scan with a UPI app · any amount helps.</b><br>
+  <b>Scan with a UPI app · coffee is always appreciated.</b><br>
   <sub>Gurtejbir Singh · <code>gurtejbir.29107@okhdfcbank</code></sub>
 </p>
 
 ---
 
-<p align="center"><b>Traqo</b> — plan. focus. follow through.<br><sub>Made by <a href="https://github.com/Gurtejhundal">Gurtejbir Singh</a> · your plans, at your pace.</sub></p>
+<p align="center"><b>Traqu</b> — plan. focus. follow through.<br><sub>Made by <a href="https://github.com/Gurtejhundal">Gurtejbir Singh</a> · your plans, at your pace.</sub></p>

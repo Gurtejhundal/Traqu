@@ -1,4 +1,4 @@
-# Traqo — Master Design System
+# Traqu — Master Design System
 
 > Page-specific files under `design-system/pages/` may add constraints but may not reintroduce color accents, neumorphism, or permanent per-task tools.
 
@@ -27,7 +27,7 @@
 - Radius: 4px controls, 6px menus, 8px panels.
 - Shadow: none except `0 8px 24px rgba(15,15,15,.12)` on floating menus.
 - Focus: 2px solid `#191919` with 2px offset.
-- Brand: flat black `T + terminal dot` vector inside one rounded document frame; pair with the Traqo text wordmark and never add color, depth, or animation.
+- Brand: flat black `T + terminal dot` vector inside one rounded document frame; pair with the Traqu text wordmark and never add color, depth, or animation.
 
 ## Interaction rules
 

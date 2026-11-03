@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { AlertCircle, Check, FileText, FileUp, Upload, X } from 'lucide-react'
 
-import { API_URL, LOCAL_USER_ID } from '../config'
+import { API_URL, LOCAL_USER_ID, IS_DESKTOP } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { MAX_ROADMAP_NAME_LENGTH, MAX_ROADMAP_TEXT_LENGTH } from '../utils/roadmapLimits'
 
@@ -138,8 +138,8 @@ export default function Import() {
             <form className="form-container" onSubmit={handleSubmit} aria-busy={loading}>
                 <span className="eyebrow">New document</span>
                 <h1 className="section-title">Import a plan</h1>
-                <p className="form-intro">Traqo reads the document’s hierarchy before creating tasks. Supporting content stays attached as notes and metadata instead of becoming noise.</p>
-                <p className="import-guide-link">Planning with an AI tool? <Link to="/agents">Use the agent guide for cleaner imports →</Link></p>
+                <p className="form-intro">Traqu reads the document’s hierarchy before creating tasks. Supporting content stays attached as notes and metadata instead of becoming noise.</p>
+                {!IS_DESKTOP && <p className="import-guide-link">Planning with an AI tool? <Link to="/agents">Use the agent guide for cleaner imports →</Link></p>}
 
                 <div className="import-capabilities" aria-label="Import behavior">
                     <span><Check size={14} /> Headings become sections</span>

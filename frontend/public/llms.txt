@@ -1,4 +1,4 @@
-# Traqo
+# Traqu
 
 A roadmap workspace with a deterministic, layout-aware document importer.
 

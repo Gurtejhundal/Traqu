@@ -24,3 +24,25 @@ test('invalid persisted window settings fall back to a usable size', () => {
   assert.deepEqual(validWindowState({ width: -100, height: 800 }), {});
   assert.deepEqual(validWindowState({ width: 1280, height: 840, maximized: true, x: -99999 }), { width: 1280, height: 840, maximized: true });
 });
+
+test('the name correction keeps an existing workspace and respects explicit profiles', () => {
+  const fs = require('node:fs');
+  const directory = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'traqu-upgrade-'));
+  const { workspaceDirectoryOverride } = require('./policy.cjs');
+  try {
+    assert.equal(workspaceDirectoryOverride(directory), null);
+    const legacy = path.join(directory, 'Traqo');
+    fs.mkdirSync(legacy);
+    fs.writeFileSync(path.join(legacy, 'roadmap.db'), 'existing workspace');
+    assert.equal(workspaceDirectoryOverride(directory), legacy);
+    const explicit = path.join(directory, 'separate-profile');
+    assert.equal(workspaceDirectoryOverride(directory, explicit), explicit);
+    const current = path.join(directory, 'Traqu');
+    fs.mkdirSync(current);
+    fs.writeFileSync(path.join(current, 'roadmap.db'), 'new workspace');
+    assert.equal(workspaceDirectoryOverride(directory), null);
+    assert.equal(fs.readFileSync(path.join(legacy, 'roadmap.db'), 'utf8'), 'existing workspace');
+  } finally {
+    fs.rmSync(directory, { recursive: true, force: true });
+  }
+});

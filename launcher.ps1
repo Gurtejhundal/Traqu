@@ -20,11 +20,11 @@ $AppUrl = "http://127.0.0.1:5173"
 $BackendHealthUrl = "http://127.0.0.1:8000/"
 $BackendHealthMarker = '"message":"Welcome to Roadmap Tracer API"'
 $FrontendHealthUrl = $AppUrl
-$FrontendHealthMarker = "<title>Traqo</title>"
+$FrontendHealthMarker = "<title>Traqu</title>"
 $LogRoot = if ($env:LOCALAPPDATA) {
-    Join-Path $env:LOCALAPPDATA "Traqo\logs"
+    Join-Path $env:LOCALAPPDATA "Traqu\logs"
 } else {
-    Join-Path $env:TEMP "Traqo\logs"
+    Join-Path $env:TEMP "Traqu\logs"
 }
 $BackendOutLog = Join-Path $LogRoot "backend.out.log"
 $BackendErrLog = Join-Path $LogRoot "backend.err.log"
@@ -87,25 +87,25 @@ function Resolve-LauncherCommands {
             }
             $basePythonVersion = [Version](($basePythonInfoJson | ConvertFrom-Json).version)
             if ($basePythonVersion -lt [Version]"3.11.0") {
-                throw "Traqo requires Python 3.11 or newer. Found $basePythonVersion."
+                throw "Traqu requires Python 3.11 or newer. Found $basePythonVersion."
             }
 
             Write-LauncherStatus "Creating an isolated backend environment..."
             & $pythonCommand.Source -m venv $BackendVenvDir
             if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $venvPython)) {
-                throw "Traqo could not create its backend environment at $BackendVenvDir."
+                throw "Traqu could not create its backend environment at $BackendVenvDir."
             }
         }
 
         $script:PythonExe = $venvPython
         $pythonInfoJson = & $script:PythonExe -c "import json, sys; print(json.dumps({'executable': sys.executable, 'prefix': sys.prefix, 'version': '.'.join(map(str, sys.version_info[:3]))}))"
         if ($LASTEXITCODE -ne 0) {
-            throw "Traqo's backend environment is not usable. Remove $BackendVenvDir and run the launcher again."
+            throw "Traqu's backend environment is not usable. Remove $BackendVenvDir and run the launcher again."
         }
         $script:PythonRuntime = $pythonInfoJson | ConvertFrom-Json
         $pythonVersion = [Version]$script:PythonRuntime.version
         if ($pythonVersion -lt [Version]"3.11.0") {
-            throw "Traqo requires Python 3.11 or newer. Recreate $BackendVenvDir with a supported Python version."
+            throw "Traqu requires Python 3.11 or newer. Recreate $BackendVenvDir with a supported Python version."
         }
         $script:PythonExe = [System.IO.Path]::GetFullPath([string]$script:PythonRuntime.executable)
     }
@@ -129,7 +129,7 @@ function Resolve-LauncherCommands {
             ($nodeVersion -ge [Version]"22.12.0")
         )
         if (-not $nodeSupported) {
-            throw "Traqo requires Node.js 20.19+ or 22.12+. Found $nodeVersion."
+            throw "Traqu requires Node.js 20.19+ or 22.12+. Found $nodeVersion."
         }
 
         $script:NpmVersion = [string](& $script:NpmExe --version)
@@ -413,12 +413,12 @@ function Wait-ServiceReady {
     throw "$ServiceName did not become ready within $TimeoutSeconds seconds. See logs in $LogRoot."
 }
 
-function Open-TraqoBrowser {
+function Open-TraquBrowser {
     if (-not (Test-ServiceReady $BackendHealthUrl $BackendHealthMarker)) {
-        throw "Traqo's backend is not running yet. Start the app before opening the browser."
+        throw "Traqu's backend is not running yet. Start the app before opening the browser."
     }
     if (-not (Test-ServiceReady $FrontendHealthUrl $FrontendHealthMarker)) {
-        throw "Traqo's frontend is not running yet. Start the app before opening the browser."
+        throw "Traqu's frontend is not running yet. Start the app before opening the browser."
     }
 
     Start-Process -FilePath "explorer.exe" -ArgumentList $AppUrl
@@ -588,7 +588,7 @@ function Stop-TrackedService {
     return $true
 }
 
-function Stop-Traqo {
+function Stop-Traqu {
     New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
     $null = Stop-TrackedService "Frontend" "frontend" 5173 $FrontendPidFile
     $null = Stop-TrackedService "Backend" "backend" 8000 $BackendPidFile
@@ -621,7 +621,7 @@ function Stop-NewServiceProcess {
     }
 }
 
-function Start-Traqo {
+function Start-Traqu {
     Test-AppFolders
     New-Item -ItemType Directory -Force -Path $LogRoot | Out-Null
 
@@ -678,9 +678,9 @@ function Start-Traqo {
         Write-LauncherStatus "Backend is already running with current dependencies."
         Write-LauncherStatus "Frontend is already running with current dependencies."
         if (-not $NoBrowser) {
-            Open-TraqoBrowser
+            Open-TraquBrowser
         }
-        Write-LauncherStatus "Traqo is ready. Logs: $LogRoot"
+        Write-LauncherStatus "Traqu is ready. Logs: $LogRoot"
         return
     }
 
@@ -733,10 +733,10 @@ function Start-Traqo {
         }
 
         if (-not $NoBrowser) {
-            Open-TraqoBrowser
+            Open-TraquBrowser
         }
 
-        Write-LauncherStatus "Traqo is ready. Logs: $LogRoot"
+        Write-LauncherStatus "Traqu is ready. Logs: $LogRoot"
     } catch {
         Stop-NewServiceProcess $frontendProcess "Frontend" "frontend" 5173 $FrontendPidFile
         Stop-NewServiceProcess $backendProcess "Backend" "backend" 8000 $BackendPidFile
@@ -746,7 +746,7 @@ function Start-Traqo {
 
 if ($Start) {
     try {
-        Start-Traqo
+        Start-Traqu
         exit 0
     } catch {
         Write-Error $_.Exception.Message
@@ -757,7 +757,7 @@ if ($Start) {
 
 if ($Stop) {
     try {
-        Stop-Traqo
+        Stop-Traqu
         exit 0
     } catch {
         Write-Error $_.Exception.Message
@@ -769,7 +769,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 
 $form = New-Object System.Windows.Forms.Form
-$form.Text = "Traqo Launcher"
+$form.Text = "Traqu Launcher"
 $form.StartPosition = "CenterScreen"
 $form.Size = New-Object System.Drawing.Size(560, 450)
 $form.MinimumSize = New-Object System.Drawing.Size(560, 450)
@@ -788,7 +788,7 @@ if (Test-Path $logoPath) {
 }
 
 $title = New-Object System.Windows.Forms.Label
-$title.Text = "Traqo"
+$title.Text = "Traqu"
 $title.Location = New-Object System.Drawing.Point(130, 28)
 $title.Size = New-Object System.Drawing.Size(360, 40)
 $title.Font = New-Object System.Drawing.Font("Segoe UI", 22, [System.Drawing.FontStyle]::Bold)
@@ -801,7 +801,7 @@ $subtitle.Size = New-Object System.Drawing.Size(360, 24)
 $subtitle.ForeColor = [System.Drawing.Color]::FromArgb(96, 96, 92)
 
 $startButton = New-Object System.Windows.Forms.Button
-$startButton.Text = "Start Traqo"
+$startButton.Text = "Start Traqu"
 $startButton.Location = New-Object System.Drawing.Point(30, 125)
 $startButton.Size = New-Object System.Drawing.Size(115, 44)
 $startButton.BackColor = [System.Drawing.Color]::FromArgb(25, 25, 24)
@@ -819,7 +819,7 @@ $openButton.FlatStyle = "Flat"
 $openButton.FlatAppearance.BorderSize = 0
 
 $stopButton = New-Object System.Windows.Forms.Button
-$stopButton.Text = "Stop Traqo"
+$stopButton.Text = "Stop Traqu"
 $stopButton.Location = New-Object System.Drawing.Point(280, 125)
 $stopButton.Size = New-Object System.Drawing.Size(115, 44)
 $stopButton.BackColor = [System.Drawing.Color]::FromArgb(185, 76, 91)
@@ -859,12 +859,12 @@ $startButton.Add_Click({
     $stopButton.Enabled = $false
     $form.ControlBox = $false
     try {
-        Start-Traqo
+        Start-Traqu
     } catch {
         Write-LauncherStatus "ERROR: $($_.Exception.Message)"
         [System.Windows.Forms.MessageBox]::Show(
             "$($_.Exception.Message)`n`nLogs: $LogRoot",
-            "Traqo could not start",
+            "Traqu could not start",
             "OK",
             "Error"
         ) | Out-Null
@@ -878,12 +878,12 @@ $startButton.Add_Click({
 
 $openButton.Add_Click({
     try {
-        Open-TraqoBrowser
+        Open-TraquBrowser
     } catch {
         Write-LauncherStatus "ERROR: $($_.Exception.Message)"
         [System.Windows.Forms.MessageBox]::Show(
             $_.Exception.Message,
-            "Traqo is not ready",
+            "Traqu is not ready",
             "OK",
             "Warning"
         ) | Out-Null
@@ -892,7 +892,7 @@ $openButton.Add_Click({
 
 $stopButton.Add_Click({
     try {
-        Stop-Traqo
+        Stop-Traqu
     } catch {
         Write-LauncherStatus "ERROR: $($_.Exception.Message)"
     }
@@ -915,5 +915,5 @@ $form.Controls.AddRange(@(
     $footer
 ))
 
-Write-LauncherStatus "Ready. Start Traqo and the browser will open when both services respond."
+Write-LauncherStatus "Ready. Start Traqu and the browser will open when both services respond."
 [void]$form.ShowDialog()

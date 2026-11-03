@@ -1,8 +1,8 @@
-# Design System — Traqo Document Workspace
+# Design System — Traqu Document Workspace
 
 ## Product intent
 
-Traqo turns unstructured plans into living, editable roadmaps. It must work equally well for an 18-day study plan, a Docker checklist, a reading queue, or a long personal project. The interface should feel like a focused document editor: content first, tools revealed in context, and no repeated controls that the user did not ask for.
+Traqu turns unstructured plans into living, editable roadmaps. It must work equally well for an 18-day study plan, a Docker checklist, a reading queue, or a long personal project. The interface should feel like a focused document editor: content first, tools revealed in context, and no repeated controls that the user did not ask for.
 
 The visual language is inspired by the clarity and progressive disclosure of modern document tools. It is not a pixel copy of Notion.
 
@@ -43,8 +43,8 @@ No blue or orange UI accents. Product controls and brand artwork stay monochrome
 
 ### Brand mark
 
-- The Traqo mark preserves the original `T + terminal dot` idea as flat black vector geometry inside a single rounded document frame.
-- Use the SVG mark with the `Traqo` text wordmark; do not rasterize, add gradients, shadows, or dimensional effects.
+- The Traqu mark preserves the original `T + terminal dot` idea as flat black vector geometry inside a single rounded document frame.
+- Use the SVG mark with the `Traqu` text wordmark; do not rasterize, add gradients, shadows, or dimensional effects.
 - The navigation link provides the accessible brand name. The mark is decorative in that lockup and must not be announced twice.
 - Minimum rendered mark size: 24px. Keep at least 25% of the mark width as clear space around standalone uses.
 

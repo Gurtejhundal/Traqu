@@ -153,7 +153,7 @@ test('duplicate section labels reject ambiguous marker fallback', () => {
 
     assert.throws(
         () => mergeEditableRoadmap(edited, prepared.savedTasks, prepared.savedSections),
-        /appears more than once.*Restore its Traqo section marker/s,
+        /appears more than once.*Restore its Traqu section marker/s,
     )
 })
 
@@ -196,7 +196,7 @@ test('ambiguous task marker removal blocks the save before payload creation', ()
 
     assert.throws(
         () => mergeEditableRoadmap(edited, prepared.savedTasks, prepared.savedSections),
-        /Traqo stopped this save because task markers were removed/,
+        /Traqu stopped this save because task markers were removed/,
     )
 })
 
@@ -209,7 +209,7 @@ test('ambiguous section marker removal blocks schedule reassignment', () => {
 
     assert.throws(
         () => mergeEditableRoadmap(edited, prepared.savedTasks, prepared.savedSections),
-        /Traqo stopped this save because section markers were removed/,
+        /Traqu stopped this save because section markers were removed/,
     )
 })
 
@@ -229,7 +229,7 @@ test('duplicate or unknown task markers are rejected', () => {
             prepared.savedTasks,
             prepared.savedSections,
         ),
-        /unknown Traqo marker/,
+        /unknown Traqu marker/,
     )
 })
 
@@ -241,7 +241,7 @@ test('unknown or conflicting section markers are rejected', () => {
             prepared.savedTasks,
             prepared.savedSections,
         ),
-        /unknown Traqo section marker/,
+        /unknown Traqu section marker/,
     )
     assert.throws(
         () => mergeEditableRoadmap(

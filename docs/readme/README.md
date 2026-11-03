@@ -1,13 +1,14 @@
 # README media
 
-The README uses Traqo's existing white-and-ink palette, quiet gray surfaces, thin borders, and a small green saved-status accent. The original monogram and checklist treatment follow the desktop interface.
+The README uses Traqu's existing white-and-ink palette, quiet gray surfaces, thin borders, and a small green saved-status accent. The original monogram and checklist treatment follow the desktop interface.
 
 | Asset | Source |
 | --- | --- |
 | `hero.gif`, `flow.gif`, `support.gif` | Original vector illustrations authored in `artwork.html`, rendered at 12 fps |
 | `hero.png`, `flow.png`, `support.png` | Still frames from the same artwork, used for reduced-motion preferences |
+| `../../frontend/public/os/*.svg` | Font Awesome Free 6.7.2 brand marks; [attribution and license](../../frontend/public/os/NOTICE.md) |
 | `upi-qr.png` | Byte-for-byte copy of [the QR used by .cnote](https://github.com/Gurtejhundal/.cnote/blob/main/media/readme/upi-qr.png) |
-| `../screenshots/*` | Real Electron captures; see [the desktop verification and media guide](../DESKTOP.md#verification-and-media) |
+| `../screenshots/*` | Desktop workspace: real Electron captures. Agent/download pages: real browser captures; see [the desktop verification and media guide](../DESKTOP.md#verification-and-media) |
 
 The vector animations illustrate product behavior; they are not presented as app screenshots. No QR modules, colors, payment fields, or recipient details were redrawn. The copied PNG's Git blob SHA is `f9f7ab33d475e232664b0e765df41f266f4c1d95`. Its decoded payload is:
 

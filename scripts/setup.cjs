@@ -21,4 +21,4 @@ run('npm', ['ci', '--prefix', 'frontend']);
 // Recent Electron releases download their binary lazily on the first require.
 // Provision it during setup, before tests and electron-builder use the dist.
 require('electron');
-console.log('\nReady. Run npm start to open Traqo, or npm run dist to make an installer.');
+console.log('\nReady. Run npm start to open Traqu, or npm run dist to make an installer.');

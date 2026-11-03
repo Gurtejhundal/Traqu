@@ -50,13 +50,13 @@ function parseEditableTasks(text) {
         }).replace(/\s+/g, ' ').trim()
 
         if (taskMarkerIds.length > 1) {
-            throw new Error(`A task line contains more than one Traqo task marker: "${title || task.title}".`)
+            throw new Error(`A task line contains more than one Traqu task marker: "${title || task.title}".`)
         }
         if (sectionMarkerIds.length > 1) {
-            throw new Error(`Section "${timeframe || task.timeframe}" contains more than one Traqo section marker.`)
+            throw new Error(`Section "${timeframe || task.timeframe}" contains more than one Traqu section marker.`)
         }
-        if (!title) throw new Error('A task title cannot contain only a Traqo marker.')
-        if (!timeframe) throw new Error('A section label cannot contain only a Traqo marker.')
+        if (!title) throw new Error('A task title cannot contain only a Traqu marker.')
+        if (!timeframe) throw new Error('A section label cannot contain only a Traqu marker.')
         if (title.length > MAX_TASK_TITLE_LENGTH) {
             throw new Error(`Task "${title.slice(0, 80)}…" exceeds the ${MAX_TASK_TITLE_LENGTH}-character title limit.`)
         }
@@ -107,7 +107,7 @@ function resolveSavedSections(parsedTasks, savedSections) {
     const associate = (task, saved) => {
         if (resultingLabelById.has(saved.editorId) && resultingLabelById.get(saved.editorId) !== task.timeframe) {
             throw new Error(
-                `The Traqo section marker for "${saved.label}" is attached to multiple section names. `
+                `The Traqu section marker for "${saved.label}" is attached to multiple section names. `
                 + 'Keep one section marker with one resulting section.'
             )
         }
@@ -121,7 +121,7 @@ function resolveSavedSections(parsedTasks, savedSections) {
             const saved = savedById.get(task.sectionEditorId)
             if (!saved) {
                 throw new Error(
-                    `Section "${task.timeframe}" has an unknown Traqo section marker. `
+                    `Section "${task.timeframe}" has an unknown Traqu section marker. `
                     + 'Restore the original marker or reload the editor.'
                 )
             }
@@ -133,7 +133,7 @@ function resolveSavedSections(parsedTasks, savedSections) {
         if (candidates.length > 1) {
             throw new Error(
                 `Section label "${task.timeframe}" appears more than once in this roadmap. `
-                + 'Restore its Traqo section marker so the correct occurrence can be identified.'
+                + 'Restore its Traqu section marker so the correct occurrence can be identified.'
             )
         }
         if (candidates[0]) matches[index] = associate(task, candidates[0])
@@ -148,7 +148,7 @@ function resolveSavedSections(parsedTasks, savedSections) {
 
     if (unmatchedNewSectionLabels.size > 0 && unmatchedMetadataSections.length > 0) {
         throw new Error(
-            'Traqo stopped this save because section markers were removed while sections were also renamed, added, or deleted. '
+            'Traqu stopped this save because section markers were removed while sections were also renamed, added, or deleted. '
             + 'No changes were sent. Restore the markers, or reload and keep each <!-- traqo-section:... --> marker attached to its section heading. '
             + 'For an intentional scheduled-section deletion, save that deletion before adding new unmarked sections.'
         )
@@ -232,10 +232,10 @@ export function mergeEditableRoadmap(text, savedTasks = [], savedSections = []) 
         if (!task.editorId) return
         const saved = savedById.get(task.editorId)
         if (!saved) {
-            throw new Error(`Task "${task.title}" has an unknown Traqo marker. Restore the original marker or reload the editor.`)
+            throw new Error(`Task "${task.title}" has an unknown Traqu marker. Restore the original marker or reload the editor.`)
         }
         if (usedSavedIds.has(task.editorId)) {
-            throw new Error(`The Traqo marker on "${task.title}" is duplicated. Every existing task marker must remain unique.`)
+            throw new Error(`The Traqu marker on "${task.title}" is duplicated. Every existing task marker must remain unique.`)
         }
         usedSavedIds.add(task.editorId)
         matches[index] = saved
@@ -267,7 +267,7 @@ export function mergeEditableRoadmap(text, savedTasks = [], savedSections = []) 
     ))
     if (unmatchedNewTasks.length > 0 && unmatchedMetadataTasks.length > 0) {
         throw new Error(
-            'Traqo stopped this save because task markers were removed while tasks were also renamed, added, or deleted. '
+            'Traqu stopped this save because task markers were removed while tasks were also renamed, added, or deleted. '
             + 'No changes were sent. Restore the markers, or reload and keep each <!-- traqo-task:... --> marker attached to its task. '
             + 'For an intentional metadata-task deletion, save that deletion before adding new unmarked tasks.'
         )

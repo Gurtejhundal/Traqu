@@ -4,7 +4,7 @@ For the self-contained desktop app, see [desktop development and packaging](DESK
 
 ## About
 
-Traqo is built for personal plans that are too large to manage as plain text. Import a roadmap from ChatGPT, PDF, DOCX, Markdown, or other text-based files, then track it as a structured checklist with sections, subsections, progress, search, and a contents panel for fast navigation.
+Traqu is built for personal plans that are too large to manage as plain text. Import a roadmap from ChatGPT, PDF, DOCX, Markdown, or other text-based files, then track it as a structured checklist with sections, subsections, progress, search, and a contents panel for fast navigation.
 
 The app is designed for single-user local use. It removes hosted sign-in friction and focuses on turning messy roadmap documents into something you can actually follow day by day, month by month, or section by section.
 
@@ -57,7 +57,7 @@ On Windows, double-click `launcher.bat` or run it from PowerShell:
 launcher.bat
 ```
 
-The launcher requires Python 3.11+ and Node.js `^20.19.0` or `>=22.12.0`. It creates an isolated backend environment in `backend/.venv`, verifies exact backend packages and the locked frontend dependency tree, installs only when the environment fingerprint changes, starts FastAPI and Vite, verifies Traqo-specific readiness responses, and then opens `http://127.0.0.1:5173`. Runtime logs are stored in `%LOCALAPPDATA%\Traqo\logs`.
+The launcher requires Python 3.11+ and Node.js `^20.19.0` or `>=22.12.0`. It creates an isolated backend environment in `backend/.venv`, verifies exact backend packages and the locked frontend dependency tree, installs only when the environment fingerprint changes, starts FastAPI and Vite, verifies Traqu-specific readiness responses, and then opens `http://127.0.0.1:5173`. Runtime logs are stored in `%LOCALAPPDATA%\Traqu\logs`.
 
 To start without opening a browser, use:
 
@@ -65,7 +65,7 @@ To start without opening a browser, use:
 launcher.bat -NoBrowser
 ```
 
-The launcher runs Traqo in the background. Stop the services with:
+The launcher runs Traqu in the background. Stop the services with:
 
 ```bat
 launcher.bat -Stop

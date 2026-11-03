@@ -1,23 +1,26 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Plus, Library, Sparkles, ArrowDownToLine } from 'lucide-react'
-import TraqoLogo from './TraqoLogo'
+import TraquLogo from './TraquLogo'
+import { IS_DESKTOP } from '../config'
 
 export default function Navbar() {
     const location = useLocation()
     const links = [
         { path: '/', label: 'Library', icon: Library },
         { path: '/import', label: 'New', icon: Plus },
-        { path: '/agents', label: 'Agent guide', icon: Sparkles },
-        { path: '/downloads', label: 'Downloads', icon: ArrowDownToLine },
+        ...(!IS_DESKTOP ? [
+            { path: '/agents', label: 'Agent guide', icon: Sparkles },
+            { path: '/downloads', label: 'Downloads', icon: ArrowDownToLine },
+        ] : []),
     ]
 
     return (
-        <header className="navbar-custom">
+        <header className={`navbar-custom ${IS_DESKTOP ? 'desktop-navbar' : ''}`}>
             <div className="navbar-inner">
-                <Link to="/" className="brand-lockup" aria-label="Traqo home">
-                    <TraqoLogo className="brand-mark" />
+                <Link to="/" className="brand-lockup" aria-label="Traqu home">
+                    <TraquLogo className="brand-mark" />
                     <span className="brand-wordmark">
-                        <strong>Traqo</strong>
+                        <strong>Traqu</strong>
                         <small>Document workspace</small>
                     </span>
                 </Link>
@@ -44,7 +47,7 @@ export default function Navbar() {
                     })}
                 </nav>
 
-                <span className="local-status"><i aria-hidden="true" /> Local</span>
+                <span className="local-status"><i aria-hidden="true" /> {IS_DESKTOP ? 'Local' : 'Web'}</span>
             </div>
         </header>
     )

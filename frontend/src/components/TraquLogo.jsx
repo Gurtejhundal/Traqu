@@ -1,4 +1,4 @@
-export default function TraqoLogo({ className = '' }) {
+export default function TraquLogo({ className = '' }) {
     return (
         <svg
             className={className}

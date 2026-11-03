@@ -1,6 +1,6 @@
 {
-  "name": "traqo-desktop",
-  "version": "1.1.0",
+  "name": "traqu-desktop",
+  "version": "1.2.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
   "repository": {
@@ -13,7 +13,7 @@
   },
   "private": true,
   "main": "desktop/main.cjs",
-  "desktopName": "Traqo",
+  "desktopName": "Traqu",
   "engines": {
     "node": "^22.12.0 || >=24.0.0"
   },
@@ -36,7 +36,7 @@
   },
   "build": {
     "appId": "io.github.gurtejhundal.traqo",
-    "productName": "Traqo",
+    "productName": "Traqu",
     "copyright": "Copyright © 2026 Gurtej Hundal",
     "electronDist": "node_modules/electron/dist",
     "directories": {
@@ -65,7 +65,7 @@
         ]
       }
     ],
-    "artifactName": "Traqo-${version}-${os}-${arch}.${ext}",
+    "artifactName": "Traqu-${version}-${os}-${arch}.${ext}",
     "linux": {
       "target": [
         "AppImage",
@@ -76,18 +76,18 @@
       "icon": "desktop/resources/icon.png",
       "desktop": {
         "entry": {
-          "StartupWMClass": "Traqo",
+          "StartupWMClass": "Traqu",
           "Comment": "Import plans. Track progress. Work locally."
         }
       },
-      "artifactName": "Traqo-Linux-x64.${ext}"
+      "artifactName": "Traqu-Linux-x64.${ext}"
     },
     "win": {
       "target": [
         "nsis"
       ],
       "icon": "desktop/resources/icon.png",
-      "artifactName": "Traqo-Windows-${arch}.${ext}"
+      "artifactName": "Traqu-Windows-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": false,
@@ -103,7 +103,10 @@
       "category": "public.app-category.productivity",
       "icon": "desktop/resources/icon.png",
       "hardenedRuntime": true,
-      "artifactName": "Traqo-macOS-${arch}.${ext}"
+      "artifactName": "Traqu-macOS-${arch}.${ext}"
+    },
+    "deb": {
+      "packageName": "traqo-desktop"
     }
   }
 }

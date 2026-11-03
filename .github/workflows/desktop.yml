@@ -74,21 +74,21 @@ jobs:
         run: xvfb-run --auto-servernum npm run test:desktop
         env:
           TRAQO_TEST_NO_SANDBOX: '1'
-          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/linux-unpacked/traqo-desktop'
+          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/linux-unpacked/traqu-desktop'
       - name: Test packaged app (Windows)
         if: runner.os == 'Windows'
         run: npm run test:desktop
         env:
-          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/win-unpacked/Traqo.exe'
+          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/win-unpacked/Traqu.exe'
       - name: Test packaged app (macOS)
         if: runner.os == 'macOS'
         run: npm run test:desktop
         env:
-          TRAQO_TEST_EXECUTABLE: "${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Traqo.app/Contents/MacOS/Traqo"
+          TRAQO_TEST_EXECUTABLE: "${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'mac-arm64' || 'mac' }}/Traqu.app/Contents/MacOS/Traqu"
       - name: Upload installers
         uses: actions/upload-artifact@v4
         with:
-          name: Traqo-${{ runner.os }}-${{ matrix.arch }}
+          name: Traqu-${{ runner.os }}-${{ matrix.arch }}
           path: |
             release/*.AppImage
             release/*.deb
@@ -122,7 +122,7 @@ jobs:
           node-version: 24
       - uses: actions/download-artifact@v4
         with:
-          pattern: Traqo-*
+          pattern: Traqu-*
           merge-multiple: true
           path: installers
       - name: Publish versioned release with stable download names

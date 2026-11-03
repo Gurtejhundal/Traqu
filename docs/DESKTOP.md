@@ -1,6 +1,6 @@
-# Traqo desktop
+# Traqu desktop
 
-Traqo's desktop edition packages the existing React workspace and FastAPI import engine together. It can run without an account, an internet connection, Node.js, or Python installed on the user's computer.
+Traqu's desktop edition packages the existing React workspace and FastAPI import engine together. It can run without an account, an internet connection, Node.js, or Python installed on the user's computer.
 
 ## Architecture and choice of framework
 
@@ -25,7 +25,7 @@ flowchart LR
     C --> G[Native PDF / Word save dialog]
 ```
 
-Electron launches `backend/desktop_server.py` during development or the PyInstaller executable after packaging. Python binds to `127.0.0.1` on a port assigned by the OS and reports the port through its stdout pipe. Electron waits for a Traqo-specific API response before showing the workspace.
+Electron launches `backend/desktop_server.py` during development or the PyInstaller executable after packaging. Python binds to `127.0.0.1` on a port assigned by the OS and reports the port through its stdout pipe. Electron waits for a Traqu-specific API response before showing the workspace.
 
 The Python desktop host serves both the compiled Vite app and `/api` from the same origin. BrowserRouter deep links survive reloads. Missing JS, CSS, and image files return 404 rather than the HTML fallback. Desktop builds force `/api` and the existing `local_owner` owner key, so web deployment environment values cannot send desktop requests to a hosted API.
 
@@ -45,15 +45,15 @@ The Python desktop host serves both the compiled Vite app and `/api` from the sa
 
 | OS | Default workspace directory |
 | --- | --- |
-| Linux | `$XDG_CONFIG_HOME/Traqo`, normally `~/.config/Traqo` |
-| Windows | `%APPDATA%\Traqo` |
-| macOS | `~/Library/Application Support/Traqo` |
+| Linux | `$XDG_CONFIG_HOME/Traqu`, normally `~/.config/Traqu` |
+| Windows | `%APPDATA%\Traqu` |
+| macOS | `~/Library/Application Support/Traqu` |
 
 Use **File → Show Data Folder** to resolve the exact location on your machine. The folder contains `roadmap.db`, `window.json`, and `logs/desktop.log`. The log rotates after 2 MB. Installed program files and user data are separate, so replacing the app does not replace the workspace. `TRAQO_DATA_DIR` can select an alternate absolute data directory; the end-to-end tests use disposable temporary directories.
 
 The desktop app starts with its own workspace. To bring an existing local web workspace across:
 
-1. Quit Traqo and stop the web backend so neither database is being written.
+1. Quit Traqu and stop the web backend so neither database is being written.
 2. Make backup copies of both databases.
 3. Copy the web app's `backend/roadmap.db` into the desktop data folder as `roadmap.db`.
 4. Reopen the desktop app. Existing schema migrations run at startup.
@@ -88,7 +88,7 @@ npm run dist     # Installers in release/
 
 Build on the target OS and CPU architecture. The Python executable and native PDF/crypto dependencies cannot be cross-compiled by simply changing an Electron target flag. The workflow uses Ubuntu 22.04 x64, Windows x64, macOS arm64, and macOS Intel runners. Linux builds made on a newer local distribution may require newer system libraries than the Ubuntu-built artifacts.
 
-Installer output uses stable release names: `Traqo-Windows-x64.exe`, `Traqo-Linux-x64.AppImage`, `Traqo-Linux-x64.deb`, and `Traqo-macOS-<arm64|x64>.<dmg|zip>`. macOS DMG and ZIP artifacts are separate for Apple Silicon and Intel. Linux builds provide AppImage and `.deb`; Windows builds provide an NSIS installer. Binary resources live outside the ASAR archive using [electron-builder extraResources](https://www.electron.build/docs/contents/).
+Installer output uses stable release names: `Traqu-Windows-x64.exe`, `Traqu-Linux-x64.AppImage`, `Traqu-Linux-x64.deb`, and `Traqu-macOS-<arm64|x64>.<dmg|zip>`. macOS DMG and ZIP artifacts are separate for Apple Silicon and Intel. Linux builds provide AppImage and `.deb`; Windows builds provide an NSIS installer. Binary resources live outside the ASAR archive using [electron-builder extraResources](https://www.electron.build/docs/contents/).
 
 The workflow retains CI artifacts for 30 days and, after every native test passes on main, publishes a public GitHub Release for the package version with seven installers and SHA-256 checksums. An existing release is never overwritten; bump package.json for the next version. Direct `/releases/latest/download/<filename>` links require no GitHub sign-in. Signing is disabled in the default CI workflow. Trusted Windows signatures and Apple signing/notarization must be configured before a signed public release; signing credentials are not included in this repository.
 
@@ -131,3 +131,9 @@ The second command needs `ffmpeg` on PATH. It creates a looping GIF from the cap
 ## Resource improvements in 1.1
 
 Route pages load on demand; the initial production JavaScript chunk decreased from 338 KB to 246 KB (uncompressed), while PDF/Word export libraries remain deferred until export. PDF import releases per-page caches rather than retaining the entire document's character/graphics caches. See [the measured parser benchmark](PDF_IMPORT.md) for the memory/time tradeoff. These are local Linux measurements, not cross-platform performance certification.
+
+## Traqu name correction in 1.2
+
+The application, installer names, native menus, window title, and README now use **Traqu**. The installer application identifier and Debian package identifier remain stable for upgrade compatibility. Fresh installs use the `Traqu` data folder; an existing installation with a database under the old `Traqo` directory continues using that directory automatically if the new folder has no database. The native File → Show Data Folder action always opens the active directory. Internal `TRAQO_*` developer variables, private API headers, and existing editor markers remain supported for compatibility.
+
+The desktop interface contains Library and New. Downloads and the agent-format guide are website pages; their routes and import-page links are excluded from desktop builds. Desktop pages use short entrance fades, checkbox feedback, and progress transitions. Reduced-motion preferences disable the entrance and checkbox animation.

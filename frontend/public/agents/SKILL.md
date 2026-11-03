@@ -1,6 +1,6 @@
 ---
-name: traqo-roadmaps
-description: Create roadmaps, study schedules, and task plans that import accurately into Traqo as JSON, Markdown, or selectable-text PDFs. Use when the user wants a plan for Traqo or requests its interchange format.
+name: traqu-roadmaps
+description: Create roadmaps, study schedules, and task plans that import accurately into Traqu as JSON, Markdown, or selectable-text PDFs. Use when the user wants a plan for Traqu or requests its interchange format.
 ---
 
 # Plans that survive import
@@ -9,7 +9,7 @@ Respect the user's subject, available time, dates, and chosen format. Do not inv
 
 ## Choose a representation
 
-Prefer JSON when preserving dates, optional work, time slots, notes, and completion state matters. Deliver a human-readable PDF alongside a matching JSON sidecar when the user wants a polished PDF. Traqo's importer is deterministic and layout-aware; this contract is not a trained-model API or a guarantee for arbitrary PDFs.
+Prefer JSON when preserving dates, optional work, time slots, notes, and completion state matters. Deliver a human-readable PDF alongside a matching JSON sidecar when the user wants a polished PDF. Traqu's importer is deterministic and layout-aware; this contract is not a trained-model API or a guarantee for arbitrary PDFs.
 
 Use [roadmap-example.json](https://traqu.vercel.app/agents/roadmap-example.json) as the supported interchange shape. The root contains `tasks` and optionally `document`. Each task has:
 

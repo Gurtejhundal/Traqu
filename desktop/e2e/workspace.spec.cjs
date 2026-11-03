@@ -91,19 +91,22 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     expect(await page.evaluate(() => typeof window.process)).toBe('undefined');
     await capture(page);
 
-    // Agent instructions are served locally; the guide also survives deep reload.
-    await page.getByRole('link', { name: 'Agent guide', exact: true }).click();
-    await expect(page.getByRole('heading', { name: 'A better plan. A cleaner import.' })).toBeVisible();
-    await page.getByRole('button', { name: 'Copy agent prompt' }).click();
-    await expect(page.getByRole('button', { name: 'Prompt copied' })).toBeVisible();
-    expect(await page.evaluate(async () => (await fetch('/agents/SKILL.md')).text())).toContain('name: traqo-roadmaps');
-    await page.getByRole('link', { name: 'Downloads', exact: true }).click();
-    await page.reload();
-    await expect(page.getByRole('link', { name: 'Setup .exe', exact: true })).toHaveAttribute('href', /releases\/latest\/download\/Traqo-Windows-x64.exe$/);
+    await expect(page.getByRole('link', { name: 'Traqu home' })).toBeVisible();
+    await expect(page).toHaveTitle('Traqu');
+    await expect(page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link')).toHaveCount(2);
+    await expect(page.getByRole('link', { name: 'Agent guide', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('link', { name: 'Downloads', exact: true })).toHaveCount(0);
+    // Old deep links must not re-open website-only screens inside the app.
+    for (const route of ['/downloads', '/agents']) {
+      await page.goto(`${origin}${route}`);
+      await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible();
+      await expect(page).toHaveURL(`${origin}/`);
+    }
 
     // Invoke the native menu directly; synthetic key events depend on OS focus.
     await newRoadmap();
     await expect(page.getByRole('heading', { name: 'Import a plan' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Use the agent guide for cleaner imports →' })).toHaveCount(0);
     await page.getByRole('tab', { name: 'Paste text' }).click();
     await page.getByLabel('Roadmap name').fill('Product design · 4-week sprint');
     await page.getByLabel('Plan content').fill(sample);

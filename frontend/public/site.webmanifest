@@ -1,9 +1,9 @@
 {
-  "name": "Traqo Document Workspace",
-  "short_name": "Traqo",
+  "name": "Traqu Document Workspace",
+  "short_name": "Traqu",
   "icons": [
     {
-      "src": "/traqo-mark.svg",
+      "src": "/traqu-mark.svg",
       "sizes": "any",
       "type": "image/svg+xml",
       "purpose": "any"

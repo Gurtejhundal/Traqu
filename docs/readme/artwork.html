@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <meta charset="utf-8">
-<title>Traqo README artwork source</title>
+<title>Traqu README artwork source</title>
 <style>html,body{margin:0;background:#fff}canvas{display:block}</style>
 <canvas id="art"></canvas>
 <script>
@@ -41,7 +41,7 @@ function setup(w,h) { canvas.width=w; canvas.height=h; c.fillStyle='#fff'; c.fil
 function hero(t) {
   setup(1200,580);
   box(1,1,1198,578,18,paper,border);
-  logo(48,40,40); text('Traqo',100,69,27,700);
+  logo(48,40,40); text('Traqu',100,69,27,700);
   text('A QUIET PLACE FOR BIG PLANS',50,135,11,600,muted);
   dot(1019,58,3); text('LOCAL BY DESIGN',1031,62,10,600,muted);
   text('Big plans.',48,223,78,700);
@@ -117,27 +117,28 @@ function flow(t) {
 function support(t) {
   setup(960,230);
   box(1,1,958,228,12,paper,border);
-  text('THE OPTIONAL SIDE QUEST',35,51,10,600,muted);
-  text('Fuel the next little win.',35,106,35,700);
-  text('Support the updates. And the ambitious console fund.',35,143,15,400,'#5f5e5b');
-  text('MADE WITH CARE. KEPT LOCAL.',35,196,10,600,muted);
-  c.save(); c.translate(745,116+Math.sin(t*Math.PI*2/5)*3);
-  c.beginPath(); c.moveTo(-62,-36); c.bezierCurveTo(-84,-35,-89,-12,-98,31);
-  c.bezierCurveTo(-106,66,-82,72,-62,51);c.lineTo(-40,30);c.lineTo(40,30);
-  c.lineTo(62,51);c.bezierCurveTo(82,72,106,66,98,31);
-  c.bezierCurveTo(89,-12,84,-35,62,-36);c.closePath();
-  c.fillStyle='#fff';c.fill();c.strokeStyle=ink;c.lineWidth=3;c.stroke();
-  line(-65,-4,-37,-4,ink,3);line(-51,-18,-51,10,ink,3);
-  const active=Math.floor(t*1.2)%4;
-  [[52,-19],[67,-4],[52,11],[37,-4]].forEach(([x,y],i)=>{
-    c.beginPath();c.arc(x,y,5,0,Math.PI*2);c.fillStyle=i===active?green:'#e9e9e7';c.fill();
-  });
-  box(-16,-13,32,19,4,paper,border);line(-5,19,5,19,'#d3d3d1',2);
+  text('A SMALL THANK YOU',35,51,10,600,muted);
+  text('Keep the next update brewing.',35,106,32,700);
+  text('If Traqu helps your day, you can buy me a coffee.',35,143,15,400,'#5f5e5b');
+  text('A LITTLE COFFEE. A LITTLE MOMENTUM.',35,196,10,600,muted);
+  c.save(); c.translate(759,121);
+  // A simple ceramic cup, with a quiet loop of rising steam.
+  c.beginPath(); c.moveTo(53,-23); c.bezierCurveTo(99,-34,103,38,53,30);
+  c.strokeStyle=ink; c.lineWidth=3; c.stroke();
+  c.beginPath(); c.moveTo(-52,-25); c.lineTo(53,-25); c.lineTo(47,38);
+  c.quadraticCurveTo(42,57,0,57); c.quadraticCurveTo(-42,57,-47,38); c.closePath();
+  c.fillStyle='#fff'; c.fill(); c.strokeStyle=ink; c.lineWidth=2.5; c.stroke();
+  c.beginPath(); c.ellipse(0,-25,52,9,0,0,Math.PI*2); c.fillStyle='#ebe8e1'; c.fill(); c.stroke();
+  line(-69,67,69,67,'#c7c7c0',2);
+  dot(0,19,4,green);
+  for(let i=0;i<3;i++) {
+    const phase=(t/5+i/3)%1;
+    c.save(); c.globalAlpha=.2+Math.sin(phase*Math.PI)*.3;
+    const x=-25+i*24, y=-43-phase*12;
+    c.beginPath(); c.moveTo(x,y); c.bezierCurveTo(x-13,y-12,x+13,y-21,x,y-33);
+    c.strokeStyle=muted; c.lineWidth=1.8; c.stroke(); c.restore();
+  }
   c.restore();
-  const sparkle=0.65+Math.sin(t*Math.PI*2/5)*.2;
-  c.save();c.globalAlpha=sparkle;
-  line(862,53,862,71,green,1.5);line(853,62,871,62,green,1.5);
-  line(618,172,618,184,'#b7b7b0',1.5);line(612,178,624,178,'#b7b7b0',1.5);c.restore();
 }
 
 window.renderReadme = (kind,t) => {

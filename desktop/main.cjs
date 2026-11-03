@@ -2,10 +2,12 @@ const { app, BrowserWindow, Menu, dialog, shell, session } = require('electron')
 const { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync, statSync, renameSync } = require('node:fs');
 const path = require('node:path');
 const { startBackend } = require('./backend.cjs');
-const { isWorkspaceURL, isExternalURL, validWindowState } = require('./policy.cjs');
+const { isWorkspaceURL, isExternalURL, validWindowState, workspaceDirectoryOverride } = require('./policy.cjs');
 
-app.setName('Traqo');
-if (process.env.TRAQO_DATA_DIR) app.setPath('userData', path.resolve(process.env.TRAQO_DATA_DIR));
+app.setName('Traqu');
+// Reuse the existing database when upgrading from the old display name.
+const dataOverride = workspaceDirectoryOverride(app.getPath('appData'), process.env.TRAQO_DATA_DIR);
+if (dataOverride) app.setPath('userData', dataOverride);
 const root = path.resolve(__dirname, '..');
 let window;
 let backend;
@@ -51,9 +53,9 @@ function menu() {
     ] },
     { role: 'windowMenu' },
     { label: 'Help', submenu: [
-      { label: 'Traqo on GitHub', click: () => shell.openExternal('https://github.com/Gurtejhundal/Traqu') },
-      ...(!mac ? [{ label: 'About Traqo', click: () => dialog.showMessageBox(window, {
-        type: 'info', title: 'About Traqo', message: `Traqo ${app.getVersion()}`,
+      { label: 'Traqu on GitHub', click: () => shell.openExternal('https://github.com/Gurtejhundal/Traqu') },
+      ...(!mac ? [{ label: 'About Traqu', click: () => dialog.showMessageBox(window, {
+        type: 'info', title: 'About Traqu', message: `Traqu ${app.getVersion()}`,
         detail: 'Your plans, at your pace.\nA private roadmap workspace on your computer.\n\nLinux · Windows · macOS',
       }) }] : []),
     ] },
@@ -65,7 +67,7 @@ function createWindow() {
   try { state = validWindowState(JSON.parse(readFileSync(path.join(app.getPath('userData'), 'window.json'), 'utf8'))); } catch { /* First launch. */ }
   window = new BrowserWindow({
     width: state.width || 1280, height: state.height || 840,
-    minWidth: 860, minHeight: 600, show: false, title: 'Traqo',
+    minWidth: 860, minHeight: 600, show: false, title: 'Traqu',
     backgroundColor: '#ffffff', icon: path.join(__dirname, 'resources', 'icon.png'),
     autoHideMenuBar: process.platform !== 'darwin',
     webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: true },
@@ -91,7 +93,7 @@ function createWindow() {
   });
   window.webContents.on('will-attach-webview', (event) => event.preventDefault());
   window.webContents.on('render-process-gone', (_event, details) => {
-    if (!quitting) fail(new Error(`The workspace renderer stopped (${details.reason}). Reopen Traqo to continue.`));
+    if (!quitting) fail(new Error(`The workspace renderer stopped (${details.reason}). Reopen Traqu to continue.`));
   });
   window.on('closed', () => { window = null; });
   return window;
@@ -104,12 +106,12 @@ async function launch() {
   if (existsSync(logPath) && statSync(logPath).size > 2 * 1024 * 1024) renameSync(logPath, `${logPath}.previous`);
   log = createWriteStream(logPath, { flags: 'a' });
   log.on('error', () => {});
-  log.write(`\n${new Date().toISOString()} Traqo ${app.getVersion()} ${process.platform}/${process.arch}\n`);
+  log.write(`\n${new Date().toISOString()} Traqu ${app.getVersion()} ${process.platform}/${process.arch}\n`);
   menu();
   await createWindow().loadFile(path.join(__dirname, 'splash.html'));
   backend = await startBackend({
     packaged: app.isPackaged, resourcesPath: process.resourcesPath, root, dataDir, log,
-    onExit: () => { if (!starting && !quitting) fail(new Error('The local service stopped unexpectedly. Reopen Traqo. Your saved roadmaps remain in the data folder.')); },
+    onExit: () => { if (!starting && !quitting) fail(new Error('The local service stopped unexpectedly. Reopen Traqu. Your saved roadmaps remain in the data folder.')); },
   });
   if (quitting) { await backend.stop(); return; }
   // Copy buttons need sanitized clipboard writes. Keep reads and all other
@@ -146,7 +148,7 @@ async function fail(error) {
   if (quitting) return;
   quitting = true;
   await dialog.showMessageBox({
-    type: 'error', title: 'Traqo could not open the workspace', message: error.message,
+    type: 'error', title: 'Traqu could not open the workspace', message: error.message,
     detail: `Your data is stored in:\n${app.getPath('userData')}\n\nSee logs/desktop.log for details.${app.isPackaged ? '' : '\nFor development, run npm run setup first.'}`,
   });
   app.quit();
