@@ -98,11 +98,23 @@ test('daily sessions, completion cards, profile history, preferences and cursor 
     await page.getByRole('navigation').getByRole('link', { name: 'Profile', exact: true }).click();
     await page.getByLabel('Reduce motion').uncheck();
     await page.getByRole('button', { name: 'Save settings', exact: true }).click();
+    await expect(page.locator('.profile-saved')).toHaveText('Your profile and preferences are saved.');
+    await expect(page.locator('html')).toHaveAttribute('data-traqu-motion', 'system');
     await page.goto(roadmapURL);
+    await app.evaluate(({ BrowserWindow }) => BrowserWindow.getAllWindows()[0].focus());
     await qu.press('Escape');
+    await expect(qu).toHaveAttribute('data-gaze', 'tracking');
     await expect(page.locator('.qu-pupils')).toBeVisible();
     await page.mouse.move(50, 300);
     await expect.poll(() => page.locator('.qu-pupils').evaluate(el => el.style.transform)).not.toBe('translate(0px, 0px)');
+    // Repeated rest gestures remount the pose; gaze must bind the new pupils.
+    await qu.press('Escape');
+    await qu.press('Escape');
+    await expect(qu).toHaveAttribute('data-gaze', 'tracking');
+    await page.mouse.move(1270, 80);
+    await expect.poll(() => page.locator('.qu-pupils').evaluate(el => el.style.transform)).toMatch(/^translate\([0-9.]+px,/);
+    await page.mouse.move(20, 300);
+    await expect.poll(() => page.locator('.qu-pupils').evaluate(el => el.style.transform)).toMatch(/^translate\(-[0-9.]+px,/);
     await page.setViewportSize({ width: 390, height: 844 });
     await page.getByRole('button', { name: 'Start Day 2', exact: true }).click();
     await capture(page, 'day-mobile');

@@ -1,6 +1,6 @@
 import { LazyMotion, domAnimation, MotionConfig, AnimatePresence, useReducedMotion } from 'motion/react'
 import * as m from 'motion/react-m'
-import { useCallback, useEffect, useId, useRef, useState } from 'react'
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { useWorkspace } from './WorkspacePreferences'
 
 export function MotionProvider({ children }) {
@@ -87,7 +87,7 @@ export function Companion({ mood = 'welcome', size = 136, className = '' }) {
         return () => window.clearInterval(timer)
     }, [visible, reduced, paused, mood, play])
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const eyes = pupils.current
         if (!eyes) return
         eyes.style.transform = 'translate(0px, 0px)'
@@ -106,12 +106,12 @@ export function Companion({ mood = 'welcome', size = 136, className = '' }) {
         window.addEventListener('pointermove', move, { passive: true })
         document.documentElement.addEventListener('pointerleave', center)
         return () => { window.removeEventListener('pointermove', move); document.documentElement.removeEventListener('pointerleave', center); center() }
-    }, [visible, reduced, action.name])
+    }, [visible, reduced, action.name, action.sequence])
 
     const interact = (name, direction = 1) => { resting.current = false; setPaused(false); play(name, direction, name === 'run' ? 2 : 1) }
     const row = action.name === 'run' ? 1 : action.name === 'sway' ? 2 : ['wave', 'hop'].includes(action.name) ? 3 : 0
     return <div className={`companion companion-${mood} ${className}`} style={{ width: size, height: size }}>
-        <button ref={stage} type="button" className="qu-stage" data-state={action.name}
+        <button ref={stage} type="button" className="qu-stage" data-state={action.name} data-gaze={visible && !reduced && action.name === 'steady' ? 'tracking' : 'centered'}
             aria-label="Play with Qu, your Traqu companion" aria-describedby={helpId}
             title="Qu · click to hop · double-click to run · S to sway · Esc to rest"
             onPointerEnter={() => { if (!paused && current.current === 'steady') play('wave') }}
