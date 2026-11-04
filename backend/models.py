@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Any, Dict, List, Optional
 
 
@@ -30,6 +30,30 @@ class RoadmapResponse(RoadmapSummary):
 
 class TaskUpdate(BaseModel):
     is_done: bool
+    timezone: Optional[str] = Field(default=None, max_length=100)
+
+
+class TaskBatchStatus(TaskUpdate):
+    task_ids: List[int] = Field(min_length=1, max_length=5000)
+
+
+class ProfileUpdate(BaseModel):
+    name: str = Field(default='Your workspace', min_length=1, max_length=80)
+    bio: str = Field(default='', max_length=240)
+    goal: str = Field(default='', max_length=240)
+    timezone: str = Field(default='', max_length=100)
+    week_start: str = Field(default='monday', pattern='^(monday|sunday)$')
+    compact: bool = False
+    pet_motion: bool = True
+    reduced_motion: bool = False
+
+    @field_validator('name')
+    @classmethod
+    def meaningful_name(cls, value):
+        value = value.strip()
+        if not value:
+            raise ValueError('Give your profile a name.')
+        return value
 
 class TaskCreate(BaseModel):
     roadmap_id: int
@@ -83,6 +107,7 @@ class TaskImport(BaseModel):
     blocks: List[TaskBlockCreate] = Field(default_factory=list)
 
 class RoadmapImport(BaseModel):
+    timezone: Optional[str] = Field(default=None, max_length=100)
     name: str = Field(min_length=1, max_length=MAX_ROADMAP_NAME_LENGTH)
     tasks: List[TaskImport] = Field(max_length=5000)
     revision: Optional[int] = Field(default=None, ge=1)

@@ -6,7 +6,7 @@ const result = spawnSync(python, [
   '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--name', 'traqo-backend',
   '--distpath', 'dist/backend', '--workpath', 'build/pyinstaller', '--specpath', 'build',
   '--paths', 'backend', '--collect-all', 'pdfplumber', '--collect-all', 'pypdfium2',
-  '--collect-submodules', 'uvicorn', '--hidden-import', 'main',
+  '--collect-submodules', 'uvicorn', '--collect-all', 'tzdata', '--hidden-import', 'main',
   'backend/desktop_server.py',
 ], { cwd: root, stdio: 'inherit' });
 if (result.error) throw result.error;

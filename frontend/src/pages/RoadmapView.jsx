@@ -1,5 +1,5 @@
 import { useCallback, useDeferredValue, useMemo, useState, useEffect, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { useReducedMotion } from 'motion/react'
 import {
@@ -27,6 +27,9 @@ import TimeframeHeader from '../components/TimeframeHeader'
 import TaskBlocks from '../components/TaskBlocks'
 import ImportedDocument from '../components/ImportedDocument'
 import { Companion } from '../components/MotionUI'
+import { useWorkspace } from '../components/WorkspacePreferences'
+import { DayCards, DayContents } from '../components/DayPlan'
+import { buildDailyPlan, dayDate } from '../utils/dailyPlan'
 
 import { API_URL, LOCAL_USER_ID } from '../config'
 import { normalizeDocumentElements } from '../utils/documentElements'
@@ -205,6 +208,11 @@ function buildOutline(groupEntries, groupMeta) {
 export default function RoadmapView() {
     const reducedMotion = useReducedMotion()
     const { id } = useParams()
+    const navigate = useNavigate()
+    const [startedDay, setStartedDay] = useState('')
+    const { timezone, profile } = useWorkspace()
+    const [recovery, setRecovery] = useState(null)
+    const [recovering, setRecovering] = useState(false)
     const [tasks, setTasks] = useState([])
     const [roadmap, setRoadmap] = useState(null)
     const [timeframes, setTimeframes] = useState([])
@@ -264,7 +272,9 @@ export default function RoadmapView() {
             setDocumentElements(normalizeDocumentElements(dRes.data?.elements))
             if (!hasInitializedView.current) {
                 const groupCount = Object.keys(groupRoadmapTasks(tRes.data).tasks).length
-                if (tRes.data.length >= 100 || groupCount >= 15) {
+                const groups = groupRoadmapTasks(tRes.data)
+                const daily = buildDailyPlan(Object.entries(groups.tasks), groups.meta)
+                if (daily.days.length || tRes.data.length >= 100 || groupCount >= 15) {
                     setViewMode('overview')
                 }
                 hasInitializedView.current = true
@@ -354,6 +364,9 @@ export default function RoadmapView() {
 
     const groupEntries = useMemo(() => Object.entries(groupedTasks), [groupedTasks])
     const groupNames = useMemo(() => Object.keys(groupedTasks), [groupedTasks])
+    const dailyPlan = useMemo(() => buildDailyPlan(groupEntries, groupMeta, timeframes), [groupEntries, groupMeta, timeframes])
+    const activeDay = dailyPlan.byGroup[activeGroup]
+    const nextDay = dailyPlan.days.find(day => day.done < day.total)
     const isLargeRoadmap = tasks.length >= 100 || groupNames.length >= 15
 
     const visibleGroupedTasks = useMemo(() => {
@@ -431,7 +444,7 @@ export default function RoadmapView() {
     }, [activeGroup, deferredSearchTerm, groupMeta, groupedTasks, statusFilter])
     const visibleTasksCount = viewMode === 'overview'
         ? visibleGroupedTasks.reduce((count, [, groupTasks]) => count + groupTasks.length, 0)
-        : activeGroupTasks.length
+        : activeDay ? visibleGroupedTasks.filter(([group]) => activeDay.groups.includes(group)).reduce((count, [, items]) => count + items.length, 0) : activeGroupTasks.length
     const groupIndexByName = useMemo(
         () => new Map(groupNames.map((group, index) => [group, index])),
         [groupNames],
@@ -453,10 +466,10 @@ export default function RoadmapView() {
         }
 
         if (!activeGroup || !groupedTasks[activeGroup]) {
-            setActiveGroup(groupNames[0])
+            setActiveGroup(dailyPlan.days[0]?.groups[0] || groupNames[0])
         }
         return undefined
-    }, [activeGroup, groupedTasks, groupNames])
+    }, [activeGroup, groupedTasks, groupNames, dailyPlan])
 
     const toggleTask = async (taskId, currentStatus) => {
         if (pendingStatusTaskIdsRef.current.has(taskId)) return
@@ -468,7 +481,7 @@ export default function RoadmapView() {
         try {
             await axios.put(
                 `${API_URL}/tasks/${taskId}/status`,
-                { is_done: !currentStatus },
+                { is_done: !currentStatus, timezone },
                 { headers: authHeaders }
             )
         } catch (error) {
@@ -494,11 +507,8 @@ export default function RoadmapView() {
         )
 
         try {
-            await Promise.all(groupTasks.map((task) => axios.put(
-                `${API_URL}/tasks/${task.id}/status`,
-                { is_done: isDone },
-                { headers: authHeaders },
-            )))
+            await axios.post(`${API_URL}/roadmaps/${id}/tasks/status`,
+                { task_ids: taskIdList, is_done: isDone, timezone }, { headers: authHeaders })
         } catch (error) {
             console.error('Failed to update group status', error)
             await fetchData()
@@ -656,15 +666,36 @@ export default function RoadmapView() {
         setIsTocOpen(false)
 
         window.requestAnimationFrame(() => {
-            roadmapRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' })
+            roadmapRef.current?.scrollIntoView({ behavior: reducedMotion || profile.reduced_motion ? 'auto' : 'smooth', block: 'start' })
         })
     }
 
     const moveFocus = (direction) => {
+        if (activeDay) {
+            const next = dailyPlan.days[dailyPlan.days.indexOf(activeDay) + direction]
+            if (next) goToGroup(next.groups[0])
+            return
+        }
         if (activeGroupIndex < 0) return
         const nextIndex = activeGroupIndex + direction
         if (nextIndex < 0 || nextIndex >= groupNames.length) return
         goToGroup(groupNames[nextIndex])
+    }
+
+    async function recoverDays() {
+        setRecovering(true); setActionError('')
+        try {
+            if (!recovery) {
+                const { data } = await axios.get(`${API_URL}/roadmaps/${id}/recover-days`)
+                setRecovery(data)
+            } else {
+                const { data } = await axios.post(`${API_URL}/roadmaps/${id}/recover-days`, { revision: recovery.revision })
+                hasInitializedView.current = false
+                setRecovery(null)
+                navigate(`/roadmap/${data.id}`)
+            }
+        } catch (error) { setActionError(error.response?.data?.detail || 'The daily copy could not be prepared. Your original plan is still here.') }
+        finally { setRecovering(false) }
     }
 
     const startEditingTask = (task) => {
@@ -870,9 +901,9 @@ export default function RoadmapView() {
 
                 <div className="toc-current">
                     <span>Current</span>
-                    <strong>{viewMode === 'overview' ? 'Roadmap overview' : (activeEntry?.sectionTitle || 'No section selected')}</strong>
+                    <strong>{viewMode === 'overview' ? (dailyPlan.days.length ? 'Your daily plan' : 'Roadmap overview') : (activeDay ? `${activeDay.week} / ${activeDay.title}` : activeEntry?.sectionTitle || 'No section selected')}</strong>
                     {viewMode === 'overview' ? (
-                        <small>{groupNames.length} sections · {totalTasks} tasks</small>
+                        <small>{dailyPlan.days.length || groupNames.length} {dailyPlan.days.length ? 'days' : 'sections'} · {totalTasks} tasks</small>
                     ) : (
                         <>
                             {activeEntry?.depth > 0 && <small>{activeEntry.title}</small>}
@@ -886,13 +917,14 @@ export default function RoadmapView() {
                     <span className="sr-only">Filter sections</span>
                     <input
                         type="search"
-                        placeholder="Filter sections"
+                        placeholder={dailyPlan.days.length ? 'Find a week or day' : 'Filter sections'}
                         value={sectionSearch}
                         onChange={(event) => setSectionSearch(event.target.value)}
                     />
                 </label>
 
-                <div className="toc-list">
+                {dailyPlan.days.length > 0 && <DayContents plan={dailyPlan} onGroup={goToGroup} activeDay={activeDay} query={sectionSearch} onSelect={day => goToGroup(day.groups[0])} />}
+                <div className="toc-list" hidden={dailyPlan.days.length > 0}>
                     {visibleOutlineSections.map((section) => (
                         <div className="toc-section" key={section.id}>
                             {section.entry ? (
@@ -935,7 +967,7 @@ export default function RoadmapView() {
                 </div>
             </aside>
 
-            <main className="roadmap-view" ref={roadmapRef}>
+            <main className={`roadmap-view ${dailyPlan.days.length ? 'has-daily-plan' : ''}`} ref={roadmapRef}>
             <div className="view-header" data-html2canvas-ignore>
                 <div className="header-left">
                     <Link to="/" className="btn-secondary back-btn">
@@ -1081,7 +1113,7 @@ export default function RoadmapView() {
                                 onClick={() => setViewMode('overview')}
                                 aria-pressed={viewMode === 'overview'}
                             >
-                                <LayoutGrid size={15} /> Overview
+                                <LayoutGrid size={15} /> {dailyPlan.days.length ? 'Days' : 'Overview'}
                             </button>
                             <button
                                 type="button"
@@ -1090,10 +1122,10 @@ export default function RoadmapView() {
                                 disabled={!activeGroup}
                                 aria-pressed={viewMode === 'focus'}
                             >
-                                <ListTree size={15} /> Focus
+                                <ListTree size={15} /> {dailyPlan.days.length ? 'Day checklist' : 'Focus'}
                             </button>
                         </div>
-                        {isLargeRoadmap && <span className="scale-badge">{totalTasks} tasks · one section at a time</span>}
+                        {isLargeRoadmap && <span className="scale-badge">{totalTasks} tasks · one {dailyPlan.days.length ? 'day' : 'section'} at a time</span>}
                     </div>
 
                     {viewMode === 'focus' && activeEntry && (
@@ -1134,15 +1166,30 @@ export default function RoadmapView() {
 
                     <div className="result-summary" role="status" aria-live="polite">
                         {viewMode === 'overview'
-                            ? `${visibleGroupedTasks.length} sections · ${visibleTasksCount} matching tasks`
-                            : `${visibleTasksCount} of ${(groupedTasks[activeGroup] || []).length} tasks in this section`}
+                            ? `${dailyPlan.days.length ? `${dailyPlan.days.length} days` : `${visibleGroupedTasks.length} sections`} · ${visibleTasksCount} matching tasks`
+                            : `${visibleTasksCount} of ${activeDay?.total ?? (groupedTasks[activeGroup] || []).length} tasks in this ${activeDay ? 'day' : 'section'}`}
                     </div>
                 </div>
             </div>
 
+            {!dailyPlan.days.length && documentElements.some(element => /\bday\s*\d+\b/i.test(element.text || '')) && <section className="recover-days" aria-label="Recover day structure">
+                <div><strong>Your source has days. Let’s bring them back.</strong><p>{recovery?.available ? `${recovery.days} days · ${recovery.tasks.length} actions · ${recovery.matched} task states matched. ${recovery.unmatched || 0} unmatched rows remain in your original. Your original plan and full source will stay available.` : recovery?.message || 'Preview a daily copy with dates, real checkboxes, and context attached to each action.'}</p></div>
+                <button type="button" className="btn-secondary" onClick={recoverDays} disabled={recovering || recovery?.available === false}>{recovering ? 'Preparing…' : recovery?.available ? 'Create daily copy' : 'Preview daily copy'}</button>
+            </section>}
             <ImportedDocument elements={documentElements} />
 
-            {viewMode === 'overview' ? (
+            {dailyPlan.days.length > 0 && viewMode === 'overview' && <DayCards visibleTasks={visibleGroupedTasks.flatMap(([, items]) => items)} plan={dailyPlan} onSelect={day => goToGroup(day.groups[0])} />}
+
+            {activeDay && viewMode === 'focus' && <section className={`day-session ${activeDay.done === activeDay.total ? 'complete' : ''}`} aria-label={`${activeDay.title} session`}>
+                <div><span className="eyebrow">{activeDay.week}</span><h2>{activeDay.title}<span>{dayDate(activeDay.date)}</span></h2><p>{activeDay.done === activeDay.total ? 'A day well spent. Your progress is saved.' : `${activeDay.total - activeDay.done} actions left · one small step at a time`}</p></div>
+                <div className="day-session-actions"><button type="button" className="btn-quiet" onClick={() => setViewMode('overview')}>All days</button>
+                {activeDay.done === activeDay.total ? nextDay && <button className="btn-primary" type="button" onClick={() => goToGroup(nextDay.groups[0])}>Start {nextDay.title}<ArrowRight size={15} /></button>
+                    : <><button type="button" className="btn-primary" onClick={() => { setStartedDay(activeDay.key); document.getElementById('day-checklist')?.scrollIntoView({ behavior: reducedMotion || profile.reduced_motion ? 'auto' : 'smooth', block: 'start' }) }}>{startedDay === activeDay.key ? 'Continue' : 'Start'} {activeDay.title}<ArrowRight size={15} /></button>
+                    <button type="button" className="btn-secondary" onClick={() => updateGroupStatus(activeDay.tasks, true)} disabled={activeDay.tasks.some(task => pendingStatusTaskIds.has(task.id))}><CheckCircle2 size={15} />Mark day complete</button></>}
+                </div>
+            </section>}
+
+            {viewMode === 'overview' && !dailyPlan.days.length ? (
                 <section className="roadmap-overview" aria-label="Roadmap section overview">
                     {resumeEntry && resumeTask && (
                         <button type="button" className="continue-card" onClick={() => goToGroup(resumeEntry[0])}>
@@ -1223,23 +1270,23 @@ export default function RoadmapView() {
                         </div>
                     )}
                 </section>
-            ) : (
-                <div className="timeline">
+            ) : viewMode === 'focus' ? (
+                <div className="timeline" id="day-checklist">
                     <nav className="focus-navigation" aria-label="Section navigation" data-html2canvas-ignore>
                         <button
                             type="button"
                             className="btn-secondary btn-small"
                             onClick={() => moveFocus(-1)}
-                            disabled={activeGroupIndex <= 0}
+                            disabled={activeDay ? dailyPlan.days.indexOf(activeDay) <= 0 : activeGroupIndex <= 0}
                         >
                             <ChevronLeft size={16} /> Previous
                         </button>
-                        <span>Section {activeGroupIndex + 1} of {groupNames.length}</span>
+                        <span>{activeDay ? `${activeDay.title} · ${dailyPlan.days.indexOf(activeDay) + 1} of ${dailyPlan.days.length} days` : `Section ${activeGroupIndex + 1} of ${groupNames.length}`}</span>
                         <button
                             type="button"
                             className="btn-secondary btn-small"
                             onClick={() => moveFocus(1)}
-                            disabled={activeGroupIndex < 0 || activeGroupIndex >= groupNames.length - 1}
+                            disabled={activeDay ? dailyPlan.days.indexOf(activeDay) >= dailyPlan.days.length - 1 : activeGroupIndex < 0 || activeGroupIndex >= groupNames.length - 1}
                         >
                             Next <ChevronRight size={16} />
                         </button>
@@ -1248,7 +1295,7 @@ export default function RoadmapView() {
                     {!activeGroup ? (
                         <div className="empty-state glass-panel">This roadmap has no sections yet.</div>
                     ) : (
-                        [[activeGroup, activeGroupTasks]].map(([group, groupTasks], groupIndex) => {
+                        (activeDay ? activeDay.groups.map(group => [group, visibleGroupedTasks.find(([key]) => key === group)?.[1] || []]) : [[activeGroup, activeGroupTasks]]).map(([group, groupTasks], groupIndex) => {
                         const meta = groupMeta[group] || { timeframe: group, roadmap: '' }
                         const timeframeData = meta.timeframeId
                             ? timeframes.find((timeframe) => Number(timeframe.id) === meta.timeframeId)
@@ -1412,7 +1459,7 @@ export default function RoadmapView() {
                     })
                 )}
             </div>
-            )}
+            ) : null}
 
             </main>
         </div>

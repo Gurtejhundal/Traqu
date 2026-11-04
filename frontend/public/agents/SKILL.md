@@ -1,40 +1,56 @@
 ---
 name: traqu-roadmaps
-description: Create roadmaps, study schedules, and task plans that import accurately into Traqu as JSON, Markdown, or selectable-text PDFs. Use when the user wants a plan for Traqu or requests its interchange format.
+description: Create daily roadmaps, study schedules, and task plans that import accurately into Traqu as JSON, Markdown, or selectable-text PDFs. Use when the user wants a plan for Traqu or requests its interchange format.
 ---
 
-# Plans that survive import
+# Plans you can start one day at a time
 
-Respect the user's subject, available time, dates, and chosen format. Do not invent dates, completed work, deadlines, or guaranteed outcomes. If dates are unknown, use a named section and omit dates.
+Respect the user's subject, available time, dates, and format. Do not invent dates, completed work, deadlines, or guaranteed outcomes. Traqu is a daily consistency tool: a week is a folder, a day is a session, and each checkbox is a real action.
 
-## Choose a representation
+## Daily structure is required for schedules
 
-Prefer JSON when preserving dates, optional work, time slots, notes, and completion state matters. Deliver a human-readable PDF alongside a matching JSON sidecar when the user wants a polished PDF. Traqu's importer is deterministic and layout-aware; this contract is not a trained-model API or a guarantee for arbitrary PDFs.
+Organize a roadmap as **Week 1 → Day 1, Day 2 …**, then Week 2 and its days. Use explicit `Day N` headings and globally increasing day numbers. Every scheduled action belongs to one day. Give each day a manageable workload, a clear outcome, and all the context needed to begin. Do not put a whole week's actions in one flat section. If the user requests a non-scheduled reference checklist, preserve that intention instead of inventing a daily schedule.
 
-Use [roadmap-example.json](https://traqu.vercel.app/agents/roadmap-example.json) as the supported interchange shape. The root contains `tasks` and optionally `document`. Each task has:
+Use confirmed dates as ISO `YYYY-MM-DD` in the day label and task date fields. If the starting date is unknown, use `Week 1 / Day 1` and omit date fields; do not guess. A scheduled rest/review day should have an explicit, honest action such as “Take the planned recovery day”; never invent checked tasks or activity history. Explain the planned cadence and recovery days.
 
-- `title`: one actionable task, without a checkbox or metadata prefix.
-- `timeframe`: a consistent section/day label shared by tasks in that section.
-- `granularity`: `day` for dated daily plans, otherwise `section`.
-- `start_date` and `end_date`: real `YYYY-MM-DD` dates, omitted when unknown.
-- `is_done`: a JSON boolean; default false.
-- `properties`: a dictionary for Time, Duration, Timezone, Priority, Optional, and other context. Use `Optional: "Yes"` for optional work. Time slots are metadata, not reminders or notifications.
-- `blocks`: a list; a note is `{"type":"note","data":{"text":"completion evidence or explanation"},"position":0}`.
+## Prefer a JSON file
 
-Use distinct labels for distinct date ranges. Do not include database IDs. Keep general explanations in the root `document`, as heading/paragraph elements, separate from tasks. Preserve code, links and notes as context rather than manufacturing tasks from them.
+Use [roadmap-example.json](https://traqu.vercel.app/agents/roadmap-example.json). The root has `tasks` and optionally `document`. Each task has:
+
+- `title`: one actionable task, without checkbox or metadata prefixes.
+- `timeframe`: the same distinct day label for all actions on that day, e.g. `Week 1 / Day 1 · 2026-11-04`.
+- `granularity`: `day` for daily sessions, including undated sessions.
+- `start_date` and `end_date`: the same confirmed ISO date for that day; omit both when unknown.
+- `is_done`: false, unless the user explicitly says the task is already done.
+- `properties`: a dictionary including `Week` (e.g. `Week 1: Foundations`) and `Day` (e.g. 1). Store Time, Duration, Timezone, Priority, Optional, links, and status here. Use `Optional: "Yes"` for optional work. These are context, not reminders.
+- `blocks`: supporting notes, code, resources, and completion evidence. A note is `{"type":"note","data":{"text":"Done when a clean checkout works."},"position":0}`.
+
+Do not include database IDs. Put general explanations in root `document` heading/paragraph elements. Task-specific explanations belong in that task's blocks. Never manufacture separate checkboxes for Time, Duration, Priority, Optional, Status, links, LeetCode references, or explanatory paragraphs. One task may have several note blocks.
 
 ## Markdown / plain text
 
-Use explicit section headings and one `- [ ] Task` or `- [x] Task` per line. See [roadmap-example.md](https://traqu.vercel.app/agents/roadmap-example.md). A heading with exactly one valid ISO date sets that section's calendar date. JSON preserves richer metadata; Markdown time strings remain readable text.
+Use week headings followed by explicit day headings. See [roadmap-example.md](https://traqu.vercel.app/agents/roadmap-example.md).
+
+```markdown
+# Week 1: Foundations
+## Day 1 · 2026-11-04
+- [ ] Set up the workspace
+Time: 19:00-19:30 | Duration: 30m | Priority: High
+Done when the setup works from a clean checkout.
+## Day 2 · 2026-11-05
+- [ ] Build and verify a small feature
+Duration: 45m
+Run it, capture the result, and write down one lesson.
+```
+
+Each checkbox is an action. Following metadata and paragraphs are context for that action, up to the next action/day. Keep unrelated reference material outside the daily checklist. Indented checkbox subtasks should be independently actionable; explanatory bullets should be plain paragraphs instead.
 
 ## PDF layout
 
-Generate selectable text, not screenshots of text. Use embedded fonts, readable contrast, and sufficient space for wrapped task text. Inspect rendered pages for clipping and overlapping text.
+Deliver a selectable-text PDF plus a matching JSON sidecar for reliable import. Use explicit `Week N` and `Day N · YYYY-MM-DD` headings. Repeat day headings after page breaks when needed. Keep a whole day together where practical. Avoid image-only text, merged cells, rotated labels, and decorative page-sized borders. Embed fonts and inspect rendered pages for clipping/overlap.
 
-For checklists, use a clear `Task` column with one task per row and separate metadata columns. Repeat column headers after a page break. Avoid merged cells, rotated labels, and page-sized decorative rectangle borders: these can confuse table detection.
-
-For weekly daily planners, include a header such as `02 Nov 2026 - 08 Nov 2026`, a `DAY / DATE` left column and a `TIME (IST) / TASK / DURATION` column. Each day has weekday, date, and optionally `Day N`. Write each time slot as `19:00-19:30 (30m) Action`; use a new line for each slot and prefix optional slots with `OPTIONAL`. For single-day cards, use `DAY 1 - MONDAY, 02 NOV 2026`, then timed task titles with supporting notes below. Reference schedules and aggregate targets should be labelled separately from actionable tasks.
+For tables, use one real action per Task row, with separate Day/Date and Time/Duration columns. Repeat column headers across page breaks. For day cards, put the explicit day heading first, then checkbox actions and their supporting details. Reference schedules and aggregate targets should be labelled separately.
 
 ## Check before delivery
 
-Validate JSON syntax and ISO dates. Count intended actionable time slots/tasks and compare that with the delivered output. Check the first and last day, month/year transitions, optional tasks, wrapped lines, and page breaks. Ensure PDF and JSON task counts and dates agree. Say when an input is ambiguous; preserve its source rather than guessing. Import the JSON sidecar for the most reliable result.
+Validate JSON, dates, globally ordered day numbers, week membership, and daily workload against the user's time. Count days and actual actions; metadata must not inflate that count. Inspect Day 1, the last day, week/month/year transitions, rest days, wrapped lines, and page breaks. Verify PDF/Markdown and JSON describe the same days, actions, and dates. Explain ambiguities and keep source context rather than guessing. Recommend importing the JSON sidecar.

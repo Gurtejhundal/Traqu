@@ -93,7 +93,7 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
 
     await expect(page.getByRole('link', { name: 'Traqu home' })).toBeVisible();
     await expect(page).toHaveTitle('Traqu');
-    await expect(page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link')).toHaveCount(2);
+    await expect(page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link')).toHaveCount(3);
     await expect(page.getByRole('link', { name: 'Agent guide', exact: true })).toHaveCount(0);
     await expect(page.getByRole('link', { name: 'Downloads', exact: true })).toHaveCount(0);
     // Old deep links must not re-open website-only screens inside the app.
@@ -230,7 +230,7 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
       args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });
     const page = await application.firstWindow();
     await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible({ timeout: 60000 });
-    await expect(page.locator('.companion img')).toBeVisible();
+    await expect(page.locator('.qu-stage')).toBeVisible();
     const qu = page.getByRole('button', { name: 'Play with Qu, your Traqu companion' });
     await qu.dblclick();
     await expect(qu).toHaveAttribute('data-state', 'run');
@@ -239,8 +239,8 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
     await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'New', exact: true }).click();
     const skill = page.locator('.import-skill');
     await skill.locator('summary').click();
-    await expect(page.getByLabel('Skill instructions')).toHaveValue(/# Plans that survive import/);
-    expect(await page.evaluate(async () => (await fetch('/agents/SKILL.md')).text())).toContain('# Plans that survive import');
+    await expect(page.getByLabel('Skill instructions')).toHaveValue(/# Plans you can start one day at a time/);
+    expect(await page.evaluate(async () => (await fetch('/agents/SKILL.md')).text())).toContain('# Plans you can start one day at a time');
     await skill.locator('summary').click();
     await page.getByRole('tab', { name: 'Paste text' }).click();
     await page.getByLabel('Roadmap name').fill('Reviewed plan');

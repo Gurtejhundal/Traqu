@@ -427,6 +427,12 @@ def parse_tasks(text: str) -> List[Dict[str, object]]:
     if assignments is not None:
         return assignments
 
+    from day_plan import parse_day_document
+    from import_formats import source_outline
+    daily = parse_day_document(source_outline(text))
+    if daily is not None:
+        return daily
+
     tasks: List[Dict[str, object]] = []
     current_timeframe = "General"
     base_timeframe = "General"

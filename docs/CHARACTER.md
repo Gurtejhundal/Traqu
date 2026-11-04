@@ -8,6 +8,7 @@ Qu is an original monochrome ink creature: soft rounded body, asymmetric ears, b
 - Click / Enter / Space: a small hop.
 - Double-click / R / arrow keys: a short run there and back; Left starts in the opposite direction.
 - S: sway. W: wave. Escape: stay steady until another explicit interaction.
+- Cursor: pupils follow the pointer within a small bounded range while the body rests. Tracking stops offscreen, in hidden/unfocused windows, and when motion is disabled in Profile.
 - At rest: an occasional blink, with a gentle sway every third interval. No continuous idle loop.
 - Loading: three running cycles, then rest. Completion: a greeting.
 - Hidden tabs, unfocused windows, and offscreen characters pause. Reduced motion keeps a steady pose even when activated.
@@ -34,3 +35,9 @@ Row 4 bottom: 6 friendly WAVE frames front-facing, right mitten low, rising, rai
 
 Keep the design beautiful, sincere and charming. Traqu is quiet white-and-ink, generous space, thoughtful motion. This small character should feel like a loyal little partner for getting things done, not a cartoon advertisement. Transparent PNG sprite sheet only.
 ```
+
+## Cursor gaze layer
+
+`frontend/public/characters/qu-gaze.png` is a generated transparent 1774 × 887 PNG: two registered square tiles. The left tile contains the resting body with white eye areas; the right contains the pupils in matching positions. CSS displays the layers separately. A passive pointer listener updates only the pupils through a bounded transform in one animation frame; pointer movement causes no React render. Other gestures use the original sprite sheet. Profile → Qu’s movements & cursor gaze or Reduce motion disables tracking.
+
+The layer was created with the built-in ImageGen tool from Qu’s existing sprite reference. No third-party mascot is used.

@@ -22,7 +22,7 @@
 
 The study plan is in a PDF. The project roadmap is in a chat. The next step is somewhere on page 37.
 
-**Traqu gives the plan a place to live.** Import it, keep its sections and useful context, then work through one clear area at a time. Check something off. Add a note. Come back tomorrow with your progress still there.
+**Traqu gives the plan a place to live.** Import it, keep its sections and useful context, then work through one clear day at a time. Open a week, choose a dated day, and start its checklist. Check something off. Add a note. Come back tomorrow with your progress still there.
 
 <picture>
   <source media="(prefers-reduced-motion: reduce)" srcset="docs/readme/flow.png">
@@ -54,11 +54,25 @@ Builds are **unsigned**: Windows may show SmartScreen and macOS may require appr
 
 [Open the agent guide](https://traqu.vercel.app/agents) · [Download SKILL.md](frontend/public/agents/SKILL.md) · [JSON template](frontend/public/agents/roadmap-example.json) · [Markdown template](frontend/public/agents/roadmap-example.md)
 
-Give your agent a shared format for dates, tasks, optional work, and notes. JSON preserves the most detail; a selectable-text PDF can accompany it. Traqu uses a deterministic, layout-aware parser, not a trained language model. The skill describes formats covered by regression tests.
+Give your agent a daily format: Week → Day, one action per checkbox, and dates only when confirmed. Keep timing, optional work, links, and notes attached to their actions. JSON preserves the most detail; a selectable-text PDF can accompany it. Traqu uses a deterministic, layout-aware parser, not a trained language model. The skill describes formats covered by regression tests.
 
 <img src="docs/screenshots/agents.png" alt="Traqu agent guide with a downloadable skill, copyable prompt and JSON example." width="1080">
 
 Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
+
+## One day at a time
+
+**Week folders → dated day cards → today’s checklist.** Start Day 1, keep its instructions beside each action, and move on when you’re ready. Completed day cards fade and their titles cross out. You can revisit or reopen any day.
+
+<img src="docs/screenshots/daily-completion.png" alt="Traqu daily plan with expandable week folders, dated day cards, a faded completed first day, and Start Day 2" width="1080">
+
+**Your corner of Traqu** keeps your name, bio, goal, timezone, week start, task spacing, and motion preferences together. A GitHub-style contribution calendar records real completions; select a date to see that day’s work, or replay the snake’s path through your activity.
+
+<img src="docs/screenshots/profile.png" alt="Traqu profile with goal, current and longest streaks, yearly contribution calendar, and snake replay" width="1080">
+
+History starts with completions recorded in this version. Imported checkmarks do not fabricate past activity. Same-day undo removes the task’s credit; reopening later keeps the earlier record. Workspace backups include profile and history; restoring keeps an existing profile and merges history by event identity.
+
+For an older flat import whose saved source contains explicit day headings and checkboxes, choose **Preview daily copy → Create daily copy**. Review the day/action counts first. Matching titles keep their completion state and notes in source order; unmatched custom rows remain in the original plan. The original roadmap and full source stay available.
 
 ## See it in action
 
@@ -146,7 +160,7 @@ React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLi
 
 <p align="center"><img src="docs/readme/qu.gif" width="136" alt="Qu, Traqu’s original monochrome companion, running, waving, and swaying"></p>
 
-Meet **Qu**, a little ink creature for small, steady progress. Click to hop, double-click to run, or use S to sway, W to wave, and Escape to rest. Short page transitions and gentle press feedback give the workspace a little life, with reduced-motion support. Import review catches incomplete plans before saving; JSON backup/restore and stable editing help keep progress safe.
+Meet **Qu**, a little ink creature for small, steady progress. Click to hop, double-click to run, or use S to sway, W to wave, and Escape to rest. At rest, Qu’s pupils follow the cursor. Short page transitions and gentle press feedback give the workspace a little life, with reduced-motion support. Import review catches incomplete plans before saving; JSON backup/restore and stable editing help keep progress safe.
 
 [Design and motion prompt](docs/DESIGN_PROMPT.md) · [Meet Qu](docs/CHARACTER.md) · [Import, backup, and hosting details](docs/RELIABILITY.md)
 

@@ -4,12 +4,14 @@ import axios from 'axios'
 import { ArrowLeft, FileText, Info, Save } from 'lucide-react'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { mergeEditableRoadmap, prepareEditableRoadmap } from '../utils/editableRoadmap'
+import { useWorkspace } from '../components/WorkspacePreferences'
 import { MAX_ROADMAP_NAME_LENGTH } from '../utils/roadmapLimits'
 
 import { API_URL, LOCAL_USER_ID } from '../config'
 
 export default function Edit() {
     const { id } = useParams()
+    const { timezone } = useWorkspace()
     const navigate = useNavigate()
     const [textContent, setTextContent] = useState('')
     const [roadmapName, setRoadmapName] = useState('')
@@ -60,7 +62,7 @@ export default function Edit() {
             const tasks = mergeEditableRoadmap(textContent, savedTasks, savedSections)
             await axios.put(
                 `${API_URL}/roadmaps/${id}/smart`,
-                { name: normalizedName, tasks, revision },
+                { name: normalizedName, tasks, revision, timezone },
                 { headers: authHeaders },
             )
             navigate(`/roadmap/${id}`)

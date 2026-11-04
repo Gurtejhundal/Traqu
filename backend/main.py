@@ -9,18 +9,21 @@ from pathlib import Path
 import re
 from typing import Any, List
 
-from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Request, Response
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Request, Response, Query
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.concurrency import run_in_threadpool
 from pydantic import ValidationError
 
 import db
+import activity
+from models import ProfileUpdate, TaskBatchStatus
 from pdf_importer import parse_pdf_document
 import roadmap_parser as parser
 from web_security import browser_user
 from import_formats import structured_text, source_outline
 from assignment_parser import assignment_warnings
 from docx_importer import generated_document
+from day_plan import parse_day_document, recover_day_copy
 from models import (
     RoadmapCreate,
     RoadmapImport,
@@ -650,7 +653,8 @@ async def _extract_upload_document(upload: UploadFile):
             )
         # An empty list is authoritative: the semantic parser found readable
         # source but intentionally classified none of it as trackable work.
-        return result.text, result.tasks, result.outline
+        daily = parse_day_document(result.outline)
+        return result.text, daily if daily is not None else result.tasks, result.outline
 
     if extension in DOCX_EXTENSIONS:
         try:
@@ -715,14 +719,70 @@ def preview_text(roadmap: RoadmapUpdate, user_id: str = Depends(get_current_user
     return _preview_document(parser.normalize_text(roadmap.text))
 
 
+@app.get('/profile')
+def workspace_profile(user_id: str = Depends(get_current_user)):
+    return activity.get_profile(user_id)
+
+
+@app.put('/profile')
+def save_workspace_profile(settings: ProfileUpdate, user_id: str = Depends(get_current_user)):
+    try:
+        return activity.save_profile(user_id, settings.model_dump())
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get('/activity')
+def workspace_activity(timezone: str = Query('UTC', max_length=100), year: int | None = None,
+                       user_id: str = Depends(get_current_user)):
+    try:
+        return activity.summary(user_id, timezone, year)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+
+
+@app.get('/activity/{day}')
+def workspace_day_history(day: str, offset: int = Query(0, ge=0, le=100000), user_id: str = Depends(get_current_user)):
+    try:
+        return activity.day_history(user_id, day, offset)
+    except ValueError as exc:
+        raise HTTPException(400, 'Use a valid YYYY-MM-DD date.') from exc
+
+
+@app.get('/roadmaps/{roadmap_id}/recover-days')
+def preview_recovered_days(roadmap_id: int, user_id: str = Depends(get_current_user)):
+    snapshot = db.export_roadmap_data(roadmap_id, user_id)
+    if snapshot is None:
+        raise HTTPException(404, 'Roadmap not found')
+    recovered = recover_day_copy(snapshot)
+    if recovered is None:
+        return {'available': False, 'message': 'No explicit day headings and checkbox actions were found in the saved source.'}
+    return {'available': True, **recovered}
+
+
+@app.post('/roadmaps/{roadmap_id}/recover-days')
+def create_recovered_days(roadmap_id: int, expected: dict, user_id: str = Depends(get_current_user)):
+    snapshot = db.export_roadmap_data(roadmap_id, user_id)
+    if snapshot is None:
+        raise HTTPException(404, 'Roadmap not found')
+    if expected.get('revision') != snapshot['revision']:
+        raise HTTPException(409, 'This roadmap changed. Preview the daily copy again.')
+    recovered = recover_day_copy(snapshot)
+    if recovered is None:
+        raise HTTPException(400, 'The source does not define recoverable days.')
+    tasks = _validate_parsed_tasks(recovered['tasks'])
+    result = db.restore_workspace([{'name': recovered['name'], 'tasks': tasks, 'document': recovered['document']}], user_id)
+    return {**result[0], 'days': recovered['days']}
+
+
 @app.post('/roadmaps/preview-file')
 async def preview_file(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
     return await _prepare_file(file)
 
 
 def _validate_workspace_backup(payload):
-    if payload.get('version') != 1 or not isinstance(payload.get('roadmaps'), list) or not 1 <= len(payload['roadmaps']) <= 100:
-        raise HTTPException(400, 'Use a version 1 Traqu workspace backup containing 1–100 roadmaps.')
+    if payload.get('version') != 1 or not isinstance(payload.get('roadmaps'), list) or not 0 <= len(payload['roadmaps']) <= 100:
+        raise HTTPException(400, 'Use a version 1 Traqu workspace backup containing up to 100 roadmaps.')
     records, total = [], 0
     for item in payload['roadmaps']:
         try:
@@ -744,7 +804,7 @@ def backup_workspace(user_id: str = Depends(get_current_user)):
     if len(roadmaps) > 100:
         raise HTTPException(400, 'Use individual roadmap JSON exports for a workspace with more than 100 roadmaps.')
     payload = {'format': 'traqu-workspace', 'version': 1,
-               'roadmaps': [db.export_roadmap_data(item['id'], user_id) for item in roadmaps]}
+               'roadmaps': [db.export_roadmap_data(item['id'], user_id) for item in roadmaps], **activity.export(user_id)}
     if len(json.dumps(payload, ensure_ascii=False).encode()) > MAX_UPLOAD_BYTES:
         raise HTTPException(413, 'This workspace exceeds the 8 MB restore limit. Save individual roadmap JSON backups instead.')
     return payload
@@ -758,7 +818,8 @@ async def restore_workspace_file(file: UploadFile = File(...), user_id: str = De
         if not isinstance(payload, dict) or payload.get('format') != 'traqu-workspace':
             raise ValueError('This is not a Traqu workspace backup.')
         records = await run_in_threadpool(_validate_workspace_backup, payload)
-        restored = await run_in_threadpool(db.restore_workspace, records, user_id)
+        extras = await run_in_threadpool(activity.validate_backup, payload)
+        restored = await run_in_threadpool(db.restore_workspace, records, user_id, extras)
     except (ValueError, TypeError, RecursionError) as exc:
         raise HTTPException(400, str(exc)) from exc
     return {'roadmaps': restored, 'message': f'Restored {len(restored)} roadmaps as new copies.'}
@@ -971,9 +1032,25 @@ def create_task(task: TaskCreate, user_id: str = Depends(get_current_user)):
 
 @app.put("/tasks/{task_id}/status")
 def update_task_status(task_id: int, status: TaskUpdate, user_id: str = Depends(get_current_user)):
-    if not db.update_task_status(task_id, status.is_done, user_id):
+    try:
+        activity.zone(status.timezone)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if not db.update_task_status(task_id, status.is_done, user_id, status.timezone):
         raise HTTPException(status_code=404, detail="Task not found")
     return {"message": "Task status updated"}
+
+
+@app.post('/roadmaps/{roadmap_id}/tasks/status')
+def update_daily_task_status(roadmap_id: int, status: TaskBatchStatus, user_id: str = Depends(get_current_user)):
+    try:
+        activity.zone(status.timezone)
+        count = db.update_tasks_status(roadmap_id, status.task_ids, status.is_done, user_id, status.timezone)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    if count is None:
+        raise HTTPException(404, 'These tasks do not belong to this roadmap.')
+    return {'updated': count}
 
 
 @app.put("/tasks/{task_id}")
@@ -1022,7 +1099,8 @@ def update_roadmap_smart(
     _ensure_unique_name(name, user_id, exclude_roadmap_id=roadmap_id)
     tasks = _tasks_from_import(roadmap)
     try:
-        updated = db.update_roadmap_smart(roadmap_id, name, tasks, user_id, revision=roadmap.revision)
+        activity.zone(roadmap.timezone)
+        updated = db.update_roadmap_smart(roadmap_id, name, tasks, user_id, revision=roadmap.revision, timezone=roadmap.timezone)
     except db.RevisionConflict as exc:
         raise HTTPException(409 if roadmap.revision else 428, str(exc)) from exc
     except ValueError as exc:
@@ -1072,7 +1150,11 @@ def update_timeframe_task_status(
     status: TaskUpdate,
     user_id: str = Depends(get_current_user),
 ):
-    updated = db.update_timeframe_task_status(timeframe_id, status.is_done, user_id)
+    try:
+        activity.zone(status.timezone)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
+    updated = db.update_timeframe_task_status(timeframe_id, status.is_done, user_id, status.timezone)
     if updated is None:
         raise HTTPException(status_code=404, detail="Timeframe not found")
     return {"message": "Timeframe task status updated", "updated": updated}

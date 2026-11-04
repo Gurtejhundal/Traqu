@@ -2,37 +2,70 @@
   "tasks": [
     {
       "title": "Set up a reproducible workspace",
-      "timeframe": "Week 1 / Day 1 · 2026-11-02",
+      "timeframe": "Week 1 / Day 1 \u00b7 2026-11-02",
       "granularity": "day",
       "start_date": "2026-11-02",
       "end_date": "2026-11-02",
       "is_done": false,
-      "properties": {"Time": "19:00–19:30", "Duration": "30 min", "Timezone": "Asia/Kolkata", "Priority": "High"},
-      "blocks": [{"type": "note", "data": {"text": "Done when the setup steps work from a clean checkout."}, "position": 0}]
+      "properties": {
+        "Week": "Week 1: Foundations",
+        "Day": 1,
+        "Time": "19:00\u201319:30",
+        "Duration": "30 min",
+        "Timezone": "Asia/Kolkata",
+        "Priority": "High"
+      },
+      "blocks": [
+        {
+          "type": "note",
+          "data": {
+            "text": "Done when the setup steps work from a clean checkout."
+          },
+          "position": 0
+        }
+      ]
     },
     {
       "title": "Build and check one small feature",
-      "timeframe": "Week 1 / Day 1 · 2026-11-02",
+      "timeframe": "Week 1 / Day 1 \u00b7 2026-11-02",
       "granularity": "day",
       "start_date": "2026-11-02",
       "end_date": "2026-11-02",
       "is_done": false,
-      "properties": {"Time": "19:30–20:00", "Duration": "30 min", "Timezone": "Asia/Kolkata"},
+      "properties": {
+        "Week": "Week 1: Foundations",
+        "Day": 1,
+        "Time": "19:30\u201320:00",
+        "Duration": "30 min",
+        "Timezone": "Asia/Kolkata"
+      },
       "blocks": []
     },
     {
       "title": "Review the result and choose the next step",
-      "timeframe": "Week 1 / Day 2 · 2026-11-03",
+      "timeframe": "Week 1 / Day 2 \u00b7 2026-11-03",
       "granularity": "day",
       "start_date": "2026-11-03",
       "end_date": "2026-11-03",
       "is_done": false,
-      "properties": {"Optional": "Yes", "Duration": "15 min"},
+      "properties": {
+        "Week": "Week 1: Foundations",
+        "Day": 2,
+        "Optional": "Yes",
+        "Duration": "15 min"
+      },
       "blocks": []
     }
   ],
   "document": [
-    {"type": "heading", "level": 1, "text": "A small, verifiable plan"},
-    {"type": "paragraph", "text": "Dates are an example. Replace them with the user's confirmed schedule. Explanations belong here, separate from tasks."}
+    {
+      "type": "heading",
+      "level": 1,
+      "text": "A small, verifiable plan"
+    },
+    {
+      "type": "paragraph",
+      "text": "Dates are an example. Replace them with the user's confirmed schedule. Explanations belong here, separate from tasks."
+    }
   ]
 }

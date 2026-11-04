@@ -5,10 +5,12 @@ import Home from './pages/Home'
 import './index.css'
 import { IS_DESKTOP } from './config'
 import { MotionProvider, RouteTransition } from './components/MotionUI'
+import { WorkspacePreferences } from './components/WorkspacePreferences'
 
 const RoadmapView = lazy(() => import('./pages/RoadmapView'))
 const Import = lazy(() => import('./pages/Import'))
 const Edit = lazy(() => import('./pages/Edit'))
+const Profile = lazy(() => import('./pages/Profile'))
 const Agents = !IS_DESKTOP ? lazy(() => import('./pages/Agents')) : null
 const Downloads = !IS_DESKTOP ? lazy(() => import('./pages/Downloads')) : null
 
@@ -23,6 +25,7 @@ function AppRoutes() {
                 <Route path="/import" element={<Import />} />
                 <Route path="/roadmap/:id" element={<RoadmapView />} />
                 <Route path="/edit/:id" element={<Edit />} />
+                <Route path="/profile" element={<Profile />} />
                 {!IS_DESKTOP && <Route path="/agents" element={<Agents />} />}
                 {!IS_DESKTOP && <Route path="/downloads" element={<Downloads />} />}
                 <Route path="*" element={<Navigate to="/" replace />} />
@@ -35,14 +38,14 @@ function AppRoutes() {
 
 function App() {
     return (
-        <MotionProvider><Router>
+        <WorkspacePreferences><MotionProvider><Router>
             <div className="app-container">
                 <Navbar />
                 <div className="content-container">
                     <AppRoutes />
                 </div>
             </div>
-        </Router></MotionProvider>
+        </Router></MotionProvider></WorkspacePreferences>
     )
 }
 

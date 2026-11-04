@@ -45,3 +45,13 @@ Local browser development must explicitly set `TRAQU_LOCAL_MODE=1` and bind the 
 ## Distribution limits
 
 Installers require new native CI builds for this version. Windows signing and Apple signing/notarization require real publisher credentials; source changes cannot manufacture those credentials. Until configured, installers are unsigned. Automatic installation of updates is not implemented; use published releases and their checksums. Cloud database provisioning and production secret configuration must be verified separately from local tests.
+
+## Daily sessions and recorded activity
+
+Explicit Day N headings and checkbox actions form daily sessions. Week headings become folders; known ISO dates stay with the day. Time, duration, priority, optional status, references, and explanatory paragraphs become properties/notes rather than checkboxes. Ambiguous undated schedules are not assigned invented dates. The installed Traqu skill and downloadable templates use the same contract.
+
+A daily recovery action creates an additional roadmap; it never replaces the old import. Duplicate action titles match saved task states/notes in source order. Review the matched/unmatched counts: custom rows absent from the source remain in the original. Completion credit is recorded only for state changes made to existing tasks, including atomic day completion and outline edits. Imports and recovered copies do not backfill history.
+
+Profile, preferences, and activity snapshots are owner-scoped database records. Activity keeps the day and IANA timezone at recording time, so later timezone changes do not move old history. Same-day undo changes that day’s entry; reopening later preserves prior activity. The contribution grid shows the selected year; totals and longest/current streaks cover all recorded years. A streak can continue from yesterday until today is complete. The snake is a bounded visual replay of recorded cells, not extra credit.
+
+Workspace JSON backups include profile and history. Restore validates all extras before its transaction, keeps an existing profile, adds roadmap copies, and merges history by stable event identity without duplicating credit. Old version 1 backups remain supported. Automatic SQLite snapshots include the new tables. Desktop builds bundle timezone data for Windows and offline use.

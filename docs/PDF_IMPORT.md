@@ -38,7 +38,7 @@ The private benchmark test is skipped when that environment variable is absent. 
 
 ## Agent-compatible authoring
 
-Use the [downloadable skill](../frontend/public/agents/SKILL.md) and [JSON example](../frontend/public/agents/roadmap-example.json). JSON is the most reliable interchange format; pair it with a readable PDF when presentation matters. Markdown checklists support a single ISO date in each section heading. Rich time-slot metadata is preserved through JSON.
+Use the [downloadable skill](../frontend/public/agents/SKILL.md) and [JSON example](../frontend/public/agents/roadmap-example.json). JSON is the most reliable interchange format; pair it with a readable PDF when presentation matters. Daily schedules use Week folders and explicit Day N headings, with one action per checkbox and a confirmed ISO date when known. Timing and supporting paragraphs stay with the action. JSON preserves the richest metadata. Older saved sources with explicit day headings can be reviewed and restored as an additional daily copy; the original plan is kept.
 
 PDF schedules should contain selectable text, explicit week date bounds, a left day/date column and a separate task/time column. Single-day cards should use a full dated `DAY N - MONDAY, 02 NOV 2026` heading. Unknown years, invalid dates and conflicting weekdays are not guessed. Generic task tables and explicit checklists still use the existing parser.
 

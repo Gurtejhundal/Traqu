@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Plus, Library, Sparkles, ArrowDownToLine } from 'lucide-react'
+import { Plus, Library, Sparkles, ArrowDownToLine, UserRound } from 'lucide-react'
 import TraquLogo from './TraquLogo'
 import { IS_DESKTOP } from '../config'
 import { Companion } from './MotionUI'
@@ -9,6 +9,7 @@ export default function Navbar() {
     const links = [
         { path: '/', label: 'Library', icon: Library },
         { path: '/import', label: 'New', icon: Plus },
+        { path: '/profile', label: 'Profile', icon: UserRound },
         ...(!IS_DESKTOP ? [
             { path: '/agents', label: 'Agent guide', icon: Sparkles },
             { path: '/downloads', label: 'Downloads', icon: ArrowDownToLine },

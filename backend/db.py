@@ -13,6 +13,7 @@ from sqlalchemy.schema import CreateTable, CreateIndex
 
 from database import SessionLocal, engine
 import models_db as models
+import activity
 
 
 def init_db():
@@ -423,7 +424,7 @@ def rename_roadmap(roadmap_id: int, new_name: str, user_id: str) -> bool:
         db.close()
 
 
-def _replace_roadmap_tasks(db, roadmap_id: int, tasks: List[Dict[str, Any]]):
+def _replace_roadmap_tasks(db, roadmap_id: int, tasks: List[Dict[str, Any]], timezone=None):
     """Reconcile an ordered outline while keeping surviving object identities."""
     frames = db.query(models.Timeframe).options(
         selectinload(models.Timeframe.tasks).selectinload(models.Task.blocks)
@@ -496,6 +497,8 @@ def _replace_roadmap_tasks(db, roadmap_id: int, tasks: List[Dict[str, Any]]):
         task.timeframe_id = frame.id
         task.title = title
         task.position = order
+        if task.id in tasks_by_id:
+            activity.record(db, task, bool(item.get("is_done", False)), task.timeframe.roadmap.user_id, timezone)
         task.is_done = bool(item.get("is_done", False))
         task.properties_json = _encode_properties(item.get("properties") or {})
         old_blocks = {block.id: block for block in task.blocks}
@@ -642,6 +645,7 @@ def update_roadmap_smart(
     user_id: str,
     raw_text: str = "",
     revision=None,
+    timezone=None,
 ) -> bool:
     db = SessionLocal()
     try:
@@ -657,7 +661,7 @@ def update_roadmap_smart(
         roadmap.name = name
         if raw_text:
             roadmap.raw_text = raw_text
-        _replace_roadmap_tasks(db, roadmap_id, tasks)
+        _replace_roadmap_tasks(db, roadmap_id, tasks, timezone)
         db.commit()
         return True
     except Exception:
@@ -817,6 +821,9 @@ def get_tasks(roadmap_id: int, user_id: str, timeframe_id: Optional[int] = None)
                 "is_done": task.is_done,
                 "timeframe_id": task.timeframe_id,
                 "timeframe_label": task.timeframe.label,
+                "start_date": task.timeframe.start_date,
+                "end_date": task.timeframe.end_date,
+                "granularity": task.timeframe.granularity,
                 "created_at": task.created_at,
                 "properties": _decode_properties(task.properties_json),
                 "blocks": _task_blocks(task),
@@ -834,6 +841,9 @@ def _task_to_dict(task: models.Task) -> Dict[str, Any]:
         "is_done": task.is_done,
         "timeframe_id": task.timeframe_id,
         "timeframe_label": task.timeframe.label,
+        "start_date": task.timeframe.start_date,
+        "end_date": task.timeframe.end_date,
+        "granularity": task.timeframe.granularity,
         "created_at": task.created_at,
         "properties": _decode_properties(task.properties_json),
         "blocks": _task_blocks(task),
@@ -893,7 +903,7 @@ def create_task(
         db.close()
 
 
-def update_task_status(task_id: int, is_done: bool, user_id: str) -> bool:
+def update_task_status(task_id: int, is_done: bool, user_id: str, timezone=None) -> bool:
     db = SessionLocal()
     try:
         task = (
@@ -906,11 +916,29 @@ def update_task_status(task_id: int, is_done: bool, user_id: str) -> bool:
         if not task:
             return False
         _touch_roadmap(db, task.timeframe.roadmap_id)
+        db.refresh(task)
+        activity.record(db, task, is_done, user_id, timezone)
         task.is_done = is_done
         db.commit()
         return True
     finally:
         db.close()
+
+
+def update_tasks_status(roadmap_id, task_ids, is_done, user_id, timezone=None):
+    with SessionLocal() as session:
+        ids = set(task_ids)
+        query = session.query(models.Task).join(models.Timeframe).join(models.Roadmap).filter(
+            models.Task.id.in_(ids), models.Roadmap.id == roadmap_id, models.Roadmap.user_id == user_id)
+        if query.count() != len(ids):
+            return None
+        _touch_roadmap(session, roadmap_id)
+        tasks = query.order_by(models.Task.id).all()
+        for task in tasks:
+            activity.record(session, task, is_done, user_id, timezone)
+            task.is_done = is_done
+        session.commit()
+        return len(tasks)
 
 
 def update_task_title(task_id: int, title: str, user_id: str) -> Optional[Dict[str, Any]]:
@@ -1211,7 +1239,7 @@ def delete_task(task_id: int, user_id: str) -> bool:
         db.close()
 
 
-def update_timeframe_task_status(timeframe_id: int, is_done: bool, user_id: str) -> Optional[int]:
+def update_timeframe_task_status(timeframe_id: int, is_done: bool, user_id: str, timezone=None) -> Optional[int]:
     db = SessionLocal()
     try:
         timeframe = (
@@ -1224,11 +1252,11 @@ def update_timeframe_task_status(timeframe_id: int, is_done: bool, user_id: str)
             return None
 
         _touch_roadmap(db, timeframe.roadmap_id)
-        updated = (
-            db.query(models.Task)
-            .filter(models.Task.timeframe_id == timeframe_id)
-            .update({models.Task.is_done: is_done}, synchronize_session=False)
-        )
+        group_tasks = db.query(models.Task).filter(models.Task.timeframe_id == timeframe_id).all()
+        for task in group_tasks:
+            activity.record(db, task, is_done, user_id, timezone)
+            task.is_done = is_done
+        updated = len(group_tasks)
         db.commit()
         return updated
     except Exception:
@@ -1332,7 +1360,7 @@ def export_roadmap_data(roadmap_id: int, user_id: str) -> Optional[Dict[str, Any
         db.close()
 
 
-def restore_workspace(roadmaps, user_id):
+def restore_workspace(roadmaps, user_id, extras=None):
     """Restore copies in one transaction; never replace existing work."""
     session = SessionLocal()
     try:
@@ -1351,6 +1379,8 @@ def restore_workspace(roadmaps, user_id):
             session.flush()
             _replace_roadmap_tasks(session, roadmap.id, item['tasks'])
             restored.append({'id': roadmap.id, 'name': name})
+        if extras:
+            activity.restore(session, user_id, extras)
         session.commit()
         return restored
     except Exception:

@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 from database import Base
 from datetime import datetime
@@ -84,4 +84,27 @@ class TaskBlock(Base):
 
     task = relationship("Task", back_populates="blocks")
 
-# Removed ActivityLog as streak system was deleted
+class WorkspaceProfile(Base):
+    __tablename__ = 'workspace_profiles'
+    __table_args__ = {'sqlite_autoincrement': True}
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(200), nullable=False, unique=True, index=True)
+    settings_json = Column(Text, nullable=False, default='{}')
+
+
+class DailyActivity(Base):
+    __tablename__ = 'daily_activity'
+    __table_args__ = (UniqueConstraint('user_id', 'event_key'),
+                     UniqueConstraint('user_id', 'task_id', 'day'), {'sqlite_autoincrement': True})
+    id = Column(Integer, primary_key=True)
+    user_id = Column(String(200), nullable=False, index=True)
+    event_key = Column(String(40), nullable=False)
+    task_id = Column(Integer, nullable=True, index=True)
+    roadmap_id = Column(Integer, nullable=True, index=True)
+    roadmap_name = Column(String(200), nullable=False)
+    title = Column(Text, nullable=False)
+    timeframe = Column(String(500), nullable=False)
+    day = Column(String(10), nullable=False, index=True)
+    timezone = Column(String(100), nullable=False)
+    is_done = Column(Boolean, nullable=False)
+    occurred_at = Column(String(40), nullable=False)
