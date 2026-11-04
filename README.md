@@ -136,11 +136,20 @@ React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLi
 <summary>A few practical limits</summary>
 
 - PDFs need selectable text. Scanned image PDFs need OCR before import.
-- Traqu is a personal, single-user workspace. The local owner key is not multi-user authentication.
+- Desktop is a private, account-free local workspace. Hosted browser workspaces require signed sessions and durable storage; clearing browser data can remove anonymous access. Export backups.
 - The desktop workspace starts separately from an existing web database; the [migration instructions](docs/DESKTOP.md#local-data-and-migration) explain how to preserve existing progress.
 - This version does not include cloud sync, automatic updates, or application-level database encryption.
 
 </details>
+
+## A little company for big plans
+
+<p align="center"><img src="frontend/public/characters/qu.png" width="136" alt="Qu, Traqu’s original folded-paper companion"></p>
+
+Meet **Qu**. Short page transitions, gentle press feedback, and a small companion give the workspace a little life, with reduced-motion support. Import review catches incomplete plans before saving; JSON backup/restore and stable editing help keep progress safe.
+
+[Design and motion prompt](docs/DESIGN_PROMPT.md) · [Import, backup, and hosting details](docs/RELIABILITY.md)
+
 
 ## Buy me a coffee
 

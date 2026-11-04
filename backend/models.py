@@ -14,6 +14,7 @@ class RoadmapCreate(BaseModel):
 
 class RoadmapUpdate(BaseModel):
     text: str = Field(min_length=1, max_length=MAX_ROADMAP_TEXT_LENGTH)
+    revision: Optional[int] = Field(default=None, ge=1)
 
 class RoadmapSummary(BaseModel):
     id: int
@@ -21,6 +22,7 @@ class RoadmapSummary(BaseModel):
     created_at: str
     total_tasks: int = 0
     completed_tasks: int = 0
+    revision: int = 1
 
 
 class RoadmapResponse(RoadmapSummary):
@@ -43,6 +45,7 @@ class TaskPropertiesUpdate(BaseModel):
 
 
 class TaskBlockCreate(BaseModel):
+    id: Optional[int] = Field(default=None, ge=1)
     type: str = Field(min_length=1, max_length=40)
     data: Dict[str, Any] = Field(default_factory=dict)
     position: Optional[int] = Field(default=None, ge=0)
@@ -67,9 +70,11 @@ class TimeframeDateUpdate(BaseModel):
     end_date: Optional[str] = None
 
 class TaskImport(BaseModel):
+    id: Optional[int] = Field(default=None, ge=1)
     title: str = Field(min_length=1, max_length=MAX_TASK_TITLE_LENGTH)
     timeframe: str = Field(max_length=MAX_TIMEFRAME_LABEL_LENGTH)
     timeframe_id: Optional[int] = Field(default=None, ge=1)
+    section_key: Optional[str] = Field(default=None, max_length=200)
     is_done: bool = False
     granularity: Optional[str] = Field(default=None, max_length=40)
     start_date: Optional[str] = None
@@ -79,4 +84,6 @@ class TaskImport(BaseModel):
 
 class RoadmapImport(BaseModel):
     name: str = Field(min_length=1, max_length=MAX_ROADMAP_NAME_LENGTH)
-    tasks: List[TaskImport] = Field(max_length=10_000)
+    tasks: List[TaskImport] = Field(max_length=5000)
+    revision: Optional[int] = Field(default=None, ge=1)
+    document: List[Dict[str, Any]] = Field(default_factory=list, max_length=10000)

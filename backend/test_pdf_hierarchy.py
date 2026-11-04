@@ -1,3 +1,4 @@
+from testing_helpers import smart_put
 import time
 import uuid
 from collections import Counter
@@ -73,7 +74,7 @@ def test_export_and_smart_update_preserve_duplicate_label_timeframe_ids(hierarch
     exported_tasks = exported.json()["tasks"]
     assert exported_tasks[0]["timeframe_id"] != exported_tasks[2]["timeframe_id"]
 
-    updated = client.put(
+    updated = smart_put(client,
         f"/roadmaps/{roadmap_id}/smart",
         json={"name": exported.json()["name"], "tasks": exported_tasks},
         headers=hierarchy_headers,
@@ -144,7 +145,7 @@ def test_smart_update_rejects_a_timeframe_id_from_another_roadmap(hierarchy_head
         headers=hierarchy_headers,
     ).json()[0]["id"]
 
-    rejected = client.put(
+    rejected = smart_put(client,
         f"/roadmaps/{first_id}/smart",
         json={
             "name": client.get(f"/roadmaps/{first_id}", headers=hierarchy_headers).json()["name"],

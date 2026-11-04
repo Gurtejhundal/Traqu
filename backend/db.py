@@ -1,20 +1,49 @@
 import json
 from collections import defaultdict, deque
 from datetime import datetime
+from pathlib import Path
+import sqlite3
 import re
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy import case, func, inspect, text
 from sqlalchemy.orm import selectinload
+from sqlalchemy.schema import CreateTable, CreateIndex
 
 from database import SessionLocal, engine
 import models_db as models
 
 
 def init_db():
+    _snapshot_local_database()
     models.Base.metadata.create_all(bind=engine)
     _run_lightweight_migrations()
+    _ensure_monotonic_sqlite_ids()
     _migrate_legacy_task_properties()
+
+
+def _snapshot_local_database():
+    """Keep seven daily, consistent SQLite snapshots before startup migrations."""
+    if engine.dialect.name != 'sqlite' or not engine.url.database or engine.url.database == ':memory:':
+        return
+    source = Path(engine.url.database)
+    if not source.is_file() or not source.stat().st_size:
+        return
+    directory = source.parent / 'backups'
+    directory.mkdir(mode=0o700, exist_ok=True)
+    destination = directory / f'roadmap-{datetime.now():%Y-%m-%d}.db'
+    if destination.exists():
+        return
+    temporary = destination.with_suffix('.pending')
+    try:
+        with sqlite3.connect(source) as origin, sqlite3.connect(temporary) as backup:
+            origin.backup(backup)
+        temporary.chmod(0o600)
+        temporary.replace(destination)
+        for older in sorted(directory.glob('roadmap-*.db'), reverse=True)[7:]:
+            older.unlink()
+    finally:
+        temporary.unlink(missing_ok=True)
 
 
 def _run_lightweight_migrations():
@@ -25,13 +54,16 @@ def _run_lightweight_migrations():
         "roadmaps": {
             "user_id": "user_id VARCHAR DEFAULT 'public_user'",
             "document_json": "document_json TEXT DEFAULT '[]'",
+            "revision": "revision INTEGER NOT NULL DEFAULT 1",
         },
         "timeframes": {
             "start_date": "start_date VARCHAR",
             "end_date": "end_date VARCHAR",
+            "position": "position INTEGER NOT NULL DEFAULT 0",
         },
         "tasks": {
             "properties_json": "properties_json TEXT DEFAULT '{}'",
+            "position": "position INTEGER NOT NULL DEFAULT 0",
         },
     }
 
@@ -48,6 +80,72 @@ def _run_lightweight_migrations():
             connection.execute(
                 text("UPDATE roadmaps SET user_id = 'public_user' WHERE user_id IS NULL OR user_id = ''")
             )
+
+
+def _ensure_monotonic_sqlite_ids():
+    """Upgrade old SQLite tables atomically without renumbering user records.
+
+    AUTOINCREMENT prevents a deleted object's URL being reassigned to new work.
+    SQLite cannot add that constraint with ALTER COLUMN. Foreign keys are
+    disabled only on this dedicated connection while all four tables are rebuilt;
+    integrity is checked before committing, and restored even after rollback.
+    """
+    if engine.dialect.name != "sqlite":
+        return
+    connection = engine.raw_connection()
+    cursor = connection.cursor()
+    try:
+        definitions = dict(cursor.execute(
+            "SELECT name, sql FROM sqlite_master WHERE type='table'"
+        ).fetchall())
+        tables = [table for table in models.Base.metadata.sorted_tables
+                  if "AUTOINCREMENT" not in definitions.get(table.name, "").upper()]
+        if not tables:
+            return
+        cursor.execute("PRAGMA foreign_keys=OFF")
+        cursor.execute("BEGIN IMMEDIATE")
+        for table in tables:
+            temporary_name = f"_traqu_upgrade_{table.name}"
+            ddl = str(CreateTable(table).compile(dialect=engine.dialect))
+            ddl = ddl.replace(f"CREATE TABLE {table.name}", f"CREATE TABLE {temporary_name}", 1)
+            cursor.execute(ddl)
+            columns = ', '.join(f'"{column.name}"' for column in table.columns)
+            cursor.execute(f'INSERT INTO "{temporary_name}" ({columns}) SELECT {columns} FROM "{table.name}"')
+            cursor.execute(f'DROP TABLE "{table.name}"')
+            cursor.execute(f'ALTER TABLE "{temporary_name}" RENAME TO "{table.name}"')
+            for index in table.indexes:
+                cursor.execute(str(CreateIndex(index).compile(dialect=engine.dialect)))
+        if cursor.execute("PRAGMA foreign_key_check").fetchone():
+            raise ValueError("Database upgrade failed its foreign-key integrity check.")
+        connection.commit()
+    except Exception:
+        connection.rollback()
+        raise
+    finally:
+        cursor.execute("PRAGMA foreign_keys=ON")
+        cursor.close()
+        connection.close()
+
+
+class RevisionConflict(ValueError):
+    pass
+
+
+def _touch_roadmap(db, roadmap_id):
+    db.query(models.Roadmap).filter(models.Roadmap.id == roadmap_id).update(
+        {models.Roadmap.revision: models.Roadmap.revision + 1}, synchronize_session=False
+    )
+
+
+def _claim_revision(db, roadmap_id, user_id, expected):
+    if expected is None:
+        raise RevisionConflict("Reload the roadmap before saving: a revision is required.")
+    updated = db.query(models.Roadmap).filter(
+        models.Roadmap.id == roadmap_id, models.Roadmap.user_id == user_id,
+        models.Roadmap.revision == expected,
+    ).update({models.Roadmap.revision: models.Roadmap.revision + 1}, synchronize_session=False)
+    if not updated:
+        raise RevisionConflict("This roadmap changed in another view. Reload the editor before saving; your draft has been kept.")
 
 
 def _legacy_truthy(value: Any) -> bool:
@@ -197,6 +295,7 @@ def _roadmap_to_dict(
         "created_at": roadmap.created_at,
         "total_tasks": counts[0],
         "completed_tasks": counts[1],
+        "revision": roadmap.revision,
     }
     if include_raw_text:
         result["raw_text"] = roadmap.raw_text
@@ -312,6 +411,7 @@ def rename_roadmap(roadmap_id: int, new_name: str, user_id: str) -> bool:
         )
         if not roadmap:
             return False
+        _touch_roadmap(db, roadmap_id)
         roadmap.name = new_name
         db.commit()
         return True
@@ -320,147 +420,119 @@ def rename_roadmap(roadmap_id: int, new_name: str, user_id: str) -> bool:
 
 
 def _replace_roadmap_tasks(db, roadmap_id: int, tasks: List[Dict[str, Any]]):
-    existing_timeframes_by_id = {
-        row.id: {
-            "granularity": row.granularity,
-            "start_date": row.start_date,
-            "end_date": row.end_date,
-        }
-        for row in db.query(
-            models.Timeframe.id,
-            models.Timeframe.label,
-            models.Timeframe.granularity,
-            models.Timeframe.start_date,
-            models.Timeframe.end_date,
-        )
-        .filter(models.Timeframe.roadmap_id == roadmap_id)
-        .all()
-    }
-    existing_timeframes_by_label: Dict[str, Dict[str, Any]] = {}
-    for row in db.query(
-        models.Timeframe.label,
-        models.Timeframe.granularity,
-        models.Timeframe.start_date,
-        models.Timeframe.end_date,
-    ).filter(models.Timeframe.roadmap_id == roadmap_id).all():
-        existing_timeframes_by_label.setdefault(
-            row.label,
-            {
-                "granularity": row.granularity,
-                "start_date": row.start_date,
-                "end_date": row.end_date,
-            },
-        )
-
-    task_ids = (
-        db.query(models.Task.id)
-        .join(models.Timeframe)
-        .filter(models.Timeframe.roadmap_id == roadmap_id)
-    )
-    db.query(models.TaskBlock).filter(models.TaskBlock.task_id.in_(task_ids)).delete(
-        synchronize_session=False
-    )
-    db.query(models.Task).filter(
-        models.Task.timeframe_id.in_(
-            db.query(models.Timeframe.id).filter(models.Timeframe.roadmap_id == roadmap_id)
-        )
-    ).delete(synchronize_session=False)
-
-    db.query(models.Timeframe).filter(models.Timeframe.roadmap_id == roadmap_id).delete(
-        synchronize_session=False
-    )
-
-    timeframe_map: Dict[tuple, models.Timeframe] = {}
+    """Reconcile an ordered outline while keeping surviving object identities."""
+    frames = db.query(models.Timeframe).options(
+        selectinload(models.Timeframe.tasks).selectinload(models.Task.blocks)
+    ).filter(models.Timeframe.roadmap_id == roadmap_id).all()
+    frames_by_id = {frame.id: frame for frame in frames}
+    tasks_by_id = {task.id: task for frame in frames for task in frame.tasks}
+    candidates = defaultdict(deque)
+    for frame in frames:
+        for task in frame.tasks:
+            candidates[(frame.id, task.title)].append(task)
+    frame_map = {}
+    kept_tasks = set()
+    kept_frames = set()
     fallback_run = 0
-    previous_fallback_label: Optional[str] = None
-    previous_used_fallback = False
-    for task in tasks:
-        title = str(task.get("title", "")).strip()
+    previous_label = None
+    previous_fallback = False
+    for order, item in enumerate(tasks):
+        title = str(item.get("title", "")).strip()
         if not title:
-            continue
-
-        label = str(task.get("timeframe") or task.get("timeframe_label") or "General").strip() or "General"
-        raw_timeframe_id = task.get("timeframe_id")
-        timeframe_id = (
-            raw_timeframe_id
-            if isinstance(raw_timeframe_id, int)
-            and not isinstance(raw_timeframe_id, bool)
-            and raw_timeframe_id > 0
-            else None
-        )
-        if timeframe_id is not None:
-            if timeframe_id not in existing_timeframes_by_id:
+            raise ValueError("Task title is required.")
+        label = str(item.get("timeframe") or item.get("timeframe_label") or "General").strip()
+        frame_id = item.get("timeframe_id")
+        source_key = item.get("section_key")
+        if frame_id is None and not source_key:
+            matching_frames = [frame for frame in frames if frame.label == label]
+            if len(matching_frames) == 1:
+                frame_id = matching_frames[0].id
+        if frame_id is not None:
+            if frame_id not in frames_by_id:
                 raise ValueError("Timeframe does not belong to this roadmap.")
-            timeframe_key = ("id", timeframe_id)
-            previous_timeframe = existing_timeframes_by_id[timeframe_id]
-            previous_used_fallback = False
-            previous_fallback_label = None
+            key = ("id", frame_id)
+            previous_fallback = False
+        elif source_key:
+            key = ("source", source_key)
+            previous_fallback = False
         else:
-            if not previous_used_fallback or label != previous_fallback_label:
+            if not previous_fallback or label != previous_label:
                 fallback_run += 1
-            timeframe_key = ("run", fallback_run)
-            previous_timeframe = existing_timeframes_by_label.get(label, {})
-            previous_used_fallback = True
-            previous_fallback_label = label
-        granularity = str(
-            task.get("granularity") or previous_timeframe.get("granularity") or "section"
-        ).strip() or "section"
-
-        if timeframe_key not in timeframe_map:
-            timeframe = models.Timeframe(
-                roadmap_id=roadmap_id,
-                label=label,
-                granularity=granularity,
-                start_date=(
-                    task["start_date"]
-                    if "start_date" in task
-                    else previous_timeframe.get("start_date")
-                ),
-                end_date=(
-                    task["end_date"]
-                    if "end_date" in task
-                    else previous_timeframe.get("end_date")
-                ),
-            )
-            db.add(timeframe)
+            key = ("run", fallback_run)
+            previous_fallback = True
+            previous_label = label
+        if key not in frame_map:
+            frame = frames_by_id.get(frame_id)
+            if frame is None:
+                frame = models.Timeframe(roadmap_id=roadmap_id, label=label, granularity="section")
+                db.add(frame)
+                db.flush()
+            frame.label = label
+            frame.position = len(frame_map)
+            frame.granularity = str(item.get("granularity") or frame.granularity or "section").strip()
+            for field in ("start_date", "end_date"):
+                if field in item:
+                    setattr(frame, field, item[field])
+            frame_map[key] = frame
+            kept_frames.add(frame.id)
+        frame = frame_map[key]
+        task_id = item.get("id")
+        if task_id is not None:
+            task = tasks_by_id.get(task_id)
+            if task is None or task.id in kept_tasks:
+                raise ValueError("Task identity is unknown, repeated, or belongs to another roadmap.")
+        else:
+            task = next((candidate for candidate in candidates[(frame.id, title)]
+                         if candidate.id not in kept_tasks), None)
+        if task is None:
+            task = models.Task(timeframe_id=frame.id, title=title, is_done=False)
+            db.add(task)
             db.flush()
-            timeframe_map[timeframe_key] = timeframe
-
-        db_task = models.Task(
-            timeframe_id=timeframe_map[timeframe_key].id,
-            title=title,
-            is_done=bool(task.get("is_done", False)),
-            properties_json=_encode_properties(task.get("properties") or {}),
-        )
-        db.add(db_task)
-        db.flush()
-        raw_blocks = task.get("blocks") or []
-        if not isinstance(raw_blocks, list) or any(
-            not isinstance(block, dict) for block in raw_blocks
-        ):
+        kept_tasks.add(task.id)
+        task.timeframe_id = frame.id
+        task.title = title
+        task.position = order
+        task.is_done = bool(item.get("is_done", False))
+        task.properties_json = _encode_properties(item.get("properties") or {})
+        old_blocks = {block.id: block for block in task.blocks}
+        kept_blocks = set()
+        raw_blocks = item.get("blocks") or []
+        if not isinstance(raw_blocks, list) or any(not isinstance(block, dict) for block in raw_blocks):
             raise ValueError("Task blocks must be a list of objects.")
-        ordered_blocks = sorted(
-            enumerate(raw_blocks),
-            key=lambda item: (
-                item[1].get("position")
-                if isinstance(item[1].get("position"), int) and item[1].get("position") >= 0
-                else item[0]
-            ),
-        )
-        for position, (_, block) in enumerate(ordered_blocks):
-            block_type = _normalize_block_type(str(block.get("type") or ""))
-            block_data = block.get("data") if isinstance(block.get("data"), dict) else {}
-            db.add(
-                models.TaskBlock(
-                    task_id=db_task.id,
-                    type=block_type,
-                    data_json=_encode_block_data(block_data),
-                    position=position,
-                )
-            )
+        ordered = sorted(enumerate(raw_blocks), key=lambda pair: (
+            pair[1].get("position") if isinstance(pair[1].get("position"), int)
+            and pair[1]["position"] >= 0 else pair[0]
+        ))
+        for position, (_, block_data) in enumerate(ordered):
+            block_id = block_data.get("id")
+            if block_id is not None:
+                block = old_blocks.get(block_id)
+                if block is None or block_id in kept_blocks:
+                    raise ValueError("Block identity does not belong to this task or is repeated.")
+            else:
+                block = models.TaskBlock(task_id=task.id)
+                db.add(block)
+            block.type = _normalize_block_type(str(block_data.get("type") or ""))
+            block.data_json = _encode_block_data(block_data.get("data") or {})
+            block.position = position
+            if block.id is not None:
+                kept_blocks.add(block.id)
+        for block_id, block in old_blocks.items():
+            if block_id not in kept_blocks:
+                db.delete(block)
+    for task_id, task in tasks_by_id.items():
+        if task_id not in kept_tasks:
+            db.delete(task)
+    db.flush()
+    for frame in frames:
+        if frame.id not in kept_frames:
+            # Moved tasks were updated above; avoid ORM delete-orphan cascading
+            # over the old, eagerly loaded relationship collection.
+            db.query(models.Timeframe).filter(models.Timeframe.id == frame.id).delete(synchronize_session=False)
+    db.flush()
 
 
-def update_roadmap_content(roadmap_id: int, new_text: str, parser_func, user_id: str) -> bool:
+def update_roadmap_content(roadmap_id: int, new_text: str, parser_func, user_id: str, revision=None) -> bool:
     db = SessionLocal()
     try:
         roadmap = (
@@ -482,7 +554,7 @@ def update_roadmap_content(roadmap_id: int, new_text: str, parser_func, user_id:
             )
             .join(models.Timeframe)
             .filter(models.Timeframe.roadmap_id == roadmap_id)
-            .order_by(models.Timeframe.id.asc(), models.Task.id.asc())
+            .order_by(models.Timeframe.position.asc(), models.Timeframe.id.asc(), models.Task.position.asc(), models.Task.id.asc())
             .all()
         )
         task_ids = [row.id for row in existing_task_rows]
@@ -547,6 +619,7 @@ def update_roadmap_content(roadmap_id: int, new_text: str, parser_func, user_id:
             existing_task = existing_by_key[key].popleft()
             task.update(existing_task)
 
+        _claim_revision(db, roadmap_id, user_id, revision)
         roadmap.raw_text = new_text
         _replace_roadmap_tasks(db, roadmap_id, tasks)
         db.commit()
@@ -564,6 +637,7 @@ def update_roadmap_smart(
     tasks: List[Dict[str, Any]],
     user_id: str,
     raw_text: str = "",
+    revision=None,
 ) -> bool:
     db = SessionLocal()
     try:
@@ -575,6 +649,7 @@ def update_roadmap_smart(
         if not roadmap:
             return False
 
+        _claim_revision(db, roadmap_id, user_id, revision)
         roadmap.name = name
         if raw_text:
             roadmap.raw_text = raw_text
@@ -730,7 +805,7 @@ def get_tasks(roadmap_id: int, user_id: str, timeframe_id: Optional[int] = None)
         if timeframe_id:
             query = query.filter(models.Task.timeframe_id == timeframe_id)
 
-        tasks = query.order_by(models.Timeframe.id.asc(), models.Task.id.asc()).all()
+        tasks = query.order_by(models.Timeframe.position.asc(), models.Timeframe.id.asc(), models.Task.position.asc(), models.Task.id.asc()).all()
         return [
             {
                 "id": task.id,
@@ -797,11 +872,12 @@ def create_task(
                 .first()
             )
         if not timeframe:
-            timeframe = models.Timeframe(roadmap_id=roadmap_id, label=label, granularity="section")
+            timeframe = models.Timeframe(roadmap_id=roadmap_id, label=label, granularity="section", position=(db.query(func.max(models.Timeframe.position)).filter(models.Timeframe.roadmap_id == roadmap_id).scalar() or 0) + 1)
             db.add(timeframe)
             db.flush()
 
-        task = models.Task(timeframe_id=timeframe.id, title=title.strip(), is_done=False)
+        _touch_roadmap(db, roadmap_id)
+        task = models.Task(timeframe_id=timeframe.id, title=title.strip(), is_done=False, position=(db.query(func.max(models.Task.position)).filter(models.Task.timeframe_id == timeframe.id).scalar() or 0) + 1)
         db.add(task)
         db.commit()
         db.refresh(task)
@@ -825,6 +901,7 @@ def update_task_status(task_id: int, is_done: bool, user_id: str) -> bool:
         )
         if not task:
             return False
+        _touch_roadmap(db, task.timeframe.roadmap_id)
         task.is_done = is_done
         db.commit()
         return True
@@ -844,6 +921,7 @@ def update_task_title(task_id: int, title: str, user_id: str) -> Optional[Dict[s
         )
         if not task:
             return None
+        _touch_roadmap(db, task.timeframe.roadmap_id)
         task.title = title.strip()
         db.commit()
         db.refresh(task)
@@ -867,6 +945,7 @@ def update_task_properties(task_id: int, properties: Dict[str, Any], user_id: st
         )
         if not task:
             return None
+        _touch_roadmap(db, task.timeframe.roadmap_id)
         task.properties_json = _encode_properties(properties or {})
         db.commit()
         db.refresh(task)
@@ -914,6 +993,7 @@ def create_task_block(
         if not task:
             return None
 
+        _touch_roadmap(db, task.timeframe.roadmap_id)
         siblings = (
             db.query(models.TaskBlock)
             .filter(models.TaskBlock.task_id == task_id)
@@ -999,6 +1079,7 @@ def create_task_blocks_bulk(
             db.rollback()
             return None
 
+        _touch_roadmap(db, next(iter(roadmap_ids)))
         created_blocks: List[models.TaskBlock] = []
         for task_id in unique_task_ids:
             task = tasks_by_id[task_id]
@@ -1043,6 +1124,7 @@ def update_task_block(
         if not block:
             return None
 
+        _touch_roadmap(db, block.task.timeframe.roadmap_id)
         if "type" in updates:
             block.type = _normalize_block_type(updates["type"])
         if "data" in updates:
@@ -1084,6 +1166,7 @@ def delete_task_block(block_id: int, user_id: str) -> bool:
         )
         if not block:
             return False
+        _touch_roadmap(db, block.task.timeframe.roadmap_id)
         task_id = block.task_id
         db.delete(block)
         db.flush()
@@ -1116,6 +1199,7 @@ def delete_task(task_id: int, user_id: str) -> bool:
         )
         if not task:
             return False
+        _touch_roadmap(db, task.timeframe.roadmap_id)
         db.delete(task)
         db.commit()
         return True
@@ -1135,6 +1219,7 @@ def update_timeframe_task_status(timeframe_id: int, is_done: bool, user_id: str)
         if not timeframe:
             return None
 
+        _touch_roadmap(db, timeframe.roadmap_id)
         updated = (
             db.query(models.Task)
             .filter(models.Task.timeframe_id == timeframe_id)
@@ -1156,7 +1241,7 @@ def get_timeframes(roadmap_id: int, user_id: str) -> List[Dict[str, Any]]:
             db.query(models.Timeframe)
             .join(models.Roadmap)
             .filter(models.Timeframe.roadmap_id == roadmap_id, models.Roadmap.user_id == user_id)
-            .order_by(models.Timeframe.id.asc())
+            .order_by(models.Timeframe.position.asc(), models.Timeframe.id.asc())
             .all()
         )
         return [
@@ -1189,6 +1274,7 @@ def update_timeframe_dates(
         )
         if not timeframe:
             return False
+        _touch_roadmap(db, timeframe.roadmap_id)
         timeframe.start_date = start_date
         timeframe.end_date = end_date
         db.commit()
@@ -1214,10 +1300,11 @@ def export_roadmap_data(roadmap_id: int, user_id: str) -> Optional[Dict[str, Any
             return None
 
         export_tasks = []
-        for timeframe in sorted(roadmap.timeframes, key=lambda item: item.id):
-            for task in sorted(timeframe.tasks, key=lambda item: item.id):
+        for timeframe in sorted(roadmap.timeframes, key=lambda item: (item.position, item.id)):
+            for task in sorted(timeframe.tasks, key=lambda item: (item.position, item.id)):
                 export_tasks.append(
                     {
+                        "id": task.id,
                         "title": task.title,
                         "timeframe": timeframe.label,
                         "timeframe_id": timeframe.id,
@@ -1232,8 +1319,38 @@ def export_roadmap_data(roadmap_id: int, user_id: str) -> Optional[Dict[str, Any
 
         return {
             "name": roadmap.name,
+            "version": 2,
+            "revision": roadmap.revision,
             "tasks": export_tasks,
             "document": _decode_document(roadmap.document_json),
         }
     finally:
         db.close()
+
+
+def restore_workspace(roadmaps, user_id):
+    """Restore copies in one transaction; never replace existing work."""
+    session = SessionLocal()
+    try:
+        names = {name.lower().strip() for (name,) in session.query(models.Roadmap.name).filter(models.Roadmap.user_id == user_id)}
+        restored = []
+        for item in roadmaps:
+            name = item['name']
+            suffix = 1
+            while name.lower().strip() in names:
+                suffix += 1
+                name = f"{item['name'][:175]} (restored {suffix})"
+            names.add(name.lower().strip())
+            roadmap = models.Roadmap(name=name, user_id=user_id, raw_text='',
+                                     document_json=json.dumps(item['document'], ensure_ascii=False, allow_nan=False))
+            session.add(roadmap)
+            session.flush()
+            _replace_roadmap_tasks(session, roadmap.id, item['tasks'])
+            restored.append({'id': roadmap.id, 'name': name})
+        session.commit()
+        return restored
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

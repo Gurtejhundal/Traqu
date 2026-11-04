@@ -78,14 +78,16 @@ def test_agent_examples_are_a_supported_lossless_contract():
             assert actual[field] == original[field]
 
 
-def test_markdown_example_maps_single_iso_date_without_guessing_ranges():
+def test_markdown_example_maps_dates_and_explicit_iso_ranges():
     from roadmap_parser import parse_tasks
     example = Path(__file__).resolve().parents[1] / 'frontend/public/agents/roadmap-example.md'
     tasks = parse_tasks(example.read_text())
     assert len(tasks) == 3
     assert [t['start_date'] for t in tasks] == ['2026-11-02', '2026-11-02', '2026-11-03']
     ranged = parse_tasks('## Week 1 2026-11-02 to 2026-11-08\n- [ ] Do one thing')
-    assert 'start_date' not in ranged[0]
+    assert (ranged[0]['start_date'], ranged[0]['end_date']) == ('2026-11-02', '2026-11-08')
+    ambiguous = parse_tasks('## Week 1 November 2–8\n- Do one thing')
+    assert 'start_date' not in ambiguous[0]
     invalid = parse_tasks('## Day 1 2026-02-30\n- [ ] Do one thing')
     assert 'start_date' not in invalid[0]
 

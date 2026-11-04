@@ -18,6 +18,7 @@ export default function Edit() {
     const [error, setError] = useState(null)
     const [savedTasks, setSavedTasks] = useState([])
     const [savedSections, setSavedSections] = useState([])
+    const [revision, setRevision] = useState(null)
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
 
     const fetchRoadmapData = useCallback(async () => {
@@ -28,6 +29,7 @@ export default function Edit() {
             setTextContent(prepared.text)
             setSavedTasks(prepared.savedTasks)
             setSavedSections(prepared.savedSections)
+            setRevision(res.data.revision)
         } catch (fetchError) {
             console.error('Failed to fetch roadmap', fetchError)
             setError('Could not load this roadmap.')
@@ -58,7 +60,7 @@ export default function Edit() {
             const tasks = mergeEditableRoadmap(textContent, savedTasks, savedSections)
             await axios.put(
                 `${API_URL}/roadmaps/${id}/smart`,
-                { name: normalizedName, tasks },
+                { name: normalizedName, tasks, revision },
                 { headers: authHeaders },
             )
             navigate(`/roadmap/${id}`)

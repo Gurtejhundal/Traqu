@@ -1,17 +1,26 @@
 from contextlib import asynccontextmanager
+import asyncio
+from weakref import WeakKeyDictionary
 from datetime import date
 from io import BytesIO
+import json
 import os
 from pathlib import Path
 import re
 from typing import Any, List
 
-from fastapi import Depends, FastAPI, File, Form, Header, HTTPException, UploadFile
+from fastapi import Depends, FastAPI, File, Form, HTTPException, UploadFile, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from starlette.concurrency import run_in_threadpool
+from pydantic import ValidationError
 
 import db
 from pdf_importer import parse_pdf_document
 import roadmap_parser as parser
+from web_security import browser_user
+from import_formats import structured_text, source_outline
+from assignment_parser import assignment_warnings
+from docx_importer import generated_document
 from models import (
     RoadmapCreate,
     RoadmapImport,
@@ -20,6 +29,7 @@ from models import (
     RoadmapSummary,
     RoadmapUpdate,
     TaskCreate,
+    TaskImport,
     TaskBlockBulkCreate,
     TaskBlockCreate,
     TaskBlockUpdate,
@@ -44,6 +54,7 @@ TEXT_EXTENSIONS = {
     ".log",
 }
 DOCX_EXTENSIONS = {".docx"}
+_pdf_limiters = WeakKeyDictionary()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -75,6 +86,41 @@ class ApiPrefixMiddleware:
 app.add_middleware(ApiPrefixMiddleware)
 
 
+class RequestBodyLimit:
+    """Bound JSON and multipart input even without a Content-Length header."""
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope.get('type') != 'http' or scope.get('method') in {'GET', 'HEAD', 'OPTIONS'}:
+            return await self.app(scope, receive, send)
+        messages, total = [], 0
+        while True:
+            message = await receive()
+            if message['type'] == 'http.disconnect':
+                return
+            total += len(message.get('body', b''))
+            if total > 16 * 1024 * 1024:
+                from starlette.responses import JSONResponse
+                response = JSONResponse({'detail': 'This request exceeds the 16 MB input limit.'}, status_code=413)
+                return await response(scope, receive, send)
+            messages.append(message)
+            if not message.get('more_body', False):
+                break
+        index = 0
+        async def replay():
+            nonlocal index
+            if index < len(messages):
+                message = messages[index]
+                index += 1
+                return message
+            return await receive()
+        await self.app(scope, replay, send)
+
+
+app.add_middleware(RequestBodyLimit)
+
+
 def _allowed_cors_origins() -> List[str]:
     origins = {
         "http://127.0.0.1:5173",
@@ -93,17 +139,17 @@ def _allowed_cors_origins() -> List[str]:
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_allowed_cors_origins(),
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
 async def get_current_user(
-    x_local_user_id: str = Header(None, alias="X-Local-User-Id", max_length=200),
-    x_legacy_user_id: str = Header(None, alias="X-Clerk-User-Id", max_length=200),
+    request: Request, response: Response,
 ):
-    return (x_local_user_id or x_legacy_user_id or "public_user").strip() or "public_user"
+    response.headers["Cache-Control"] = "private, no-store"
+    return browser_user(request, response)
 
 
 @app.get("/")
@@ -178,66 +224,57 @@ async def _read_upload_limited(upload: UploadFile, max_bytes: int = MAX_UPLOAD_B
     return b"".join(chunks)
 
 
-def _validate_parsed_tasks(tasks, *, preserve_timeframe_ids: bool = False):
-    if not tasks:
-        raise HTTPException(status_code=400, detail="No trackable tasks were found in this roadmap.")
-
+def _validate_parsed_tasks(tasks, *, preserve_timeframe_ids=False, allow_empty=False):
+    if not tasks and not allow_empty:
+        raise HTTPException(400, "No trackable tasks were found in this roadmap.")
+    if len(tasks) > 5000:
+        raise HTTPException(400, "A roadmap can contain at most 5000 tasks.")
     validated = []
-    for task in tasks:
-        parsed_task = dict(task)
+    for index, task in enumerate(tasks, 1):
+        try:
+            item = TaskImport.model_validate(task).model_dump(exclude_unset=True)
+        except ValidationError as exc:
+            raise HTTPException(400, f"Task {index}: {exc.errors()[0]['msg']}") from exc
+        item['title'] = item['title'].strip()
+        item['timeframe'] = item['timeframe'].strip() or 'General'
+        if not item['title']:
+            raise HTTPException(400, f"Task {index} title is required.")
         if not preserve_timeframe_ids:
-            parsed_task.pop("timeframe_id", None)
-        if "start_date" in parsed_task or "end_date" in parsed_task:
-            raw_start = parsed_task.get("start_date")
-            raw_end = parsed_task.get("end_date")
-            start_date, end_date = _normalize_date_range(
-                None if raw_start is None else str(raw_start),
-                None if raw_end is None else str(raw_end),
-            )
-            if "start_date" in parsed_task:
-                parsed_task["start_date"] = start_date
-            if "end_date" in parsed_task:
-                parsed_task["end_date"] = end_date
-        validated.append(parsed_task)
+            source_id = item.pop('timeframe_id', None)
+            if source_id is not None:
+                item['section_key'] = f"import-section-{source_id}"
+            item.pop('id', None)
+            for block in item.get('blocks', []):
+                block.pop('id', None)
+        if 'start_date' in item or 'end_date' in item:
+            start, end = _normalize_date_range(item.get('start_date'), item.get('end_date'))
+            if 'start_date' in item:
+                item['start_date'] = start
+            if 'end_date' in item:
+                item['end_date'] = end
+        try:
+            db._encode_properties(item.get('properties') or {})
+            for block in item.get('blocks', []):
+                db._normalize_block_type(block['type'])
+                db._encode_block_data(block.get('data') or {})
+        except ValueError as exc:
+            raise HTTPException(400, f"Task {index}: {exc}") from exc
+        validated.append(item)
     return validated
 
 
-def _tasks_from_text(text: str):
-    return _validate_parsed_tasks(parser.parse_tasks(text))
+def _tasks_from_text(text):
+    try:
+        return _validate_parsed_tasks(parser.parse_tasks(text))
+    except ValueError as exc:
+        raise HTTPException(400, str(exc)) from exc
 
 
-def _tasks_from_import(roadmap: RoadmapImport, *, preserve_timeframe_ids: bool = True):
-    tasks = []
-    for index, task in enumerate(roadmap.tasks, start=1):
-        title = task.title.strip()
-        timeframe = task.timeframe.strip() or "General"
-        if not title:
-            raise HTTPException(status_code=400, detail=f"Task {index} title is required.")
-
-        start_date, end_date = _normalize_date_range(task.start_date, task.end_date)
-        imported_task = {
-            "title": title,
-            "timeframe": timeframe,
-            "is_done": task.is_done,
-            "properties": task.properties,
-            "blocks": [
-                block.model_dump() if hasattr(block, "model_dump") else block.dict()
-                for block in task.blocks
-            ],
-        }
-        if preserve_timeframe_ids and task.timeframe_id is not None:
-            imported_task["timeframe_id"] = task.timeframe_id
-        if task.granularity:
-            imported_task["granularity"] = task.granularity.strip() or "section"
-        if start_date is not None:
-            imported_task["start_date"] = start_date
-        if end_date is not None:
-            imported_task["end_date"] = end_date
-        tasks.append(imported_task)
-
-    if not tasks:
-        raise HTTPException(status_code=400, detail="No trackable tasks were found in this roadmap.")
-    return tasks
+def _tasks_from_import(roadmap: RoadmapImport, *, preserve_timeframe_ids=True):
+    return _validate_parsed_tasks(
+        [task.model_dump(exclude_unset=True) for task in roadmap.tasks],
+        preserve_timeframe_ids=preserve_timeframe_ids,
+    )
 
 
 def _decode_text_bytes(content: bytes) -> str:
@@ -595,7 +632,10 @@ async def _extract_upload_document(upload: UploadFile):
 
     if extension == ".pdf" or upload.content_type == "application/pdf":
         try:
-            result = parse_pdf_document(content)
+            loop = asyncio.get_running_loop()
+            limiter = _pdf_limiters.setdefault(loop, asyncio.Semaphore(2))
+            async with limiter:
+                result = await run_in_threadpool(parse_pdf_document, content)
         except RuntimeError as exc:
             raise HTTPException(
                 status_code=500,
@@ -613,10 +653,20 @@ async def _extract_upload_document(upload: UploadFile):
         return result.text, result.tasks, result.outline
 
     if extension in DOCX_EXTENSIONS:
-        return _extract_docx_text(content), None, []
+        try:
+            generated = await run_in_threadpool(generated_document, content)
+        except Exception as exc:
+            raise HTTPException(400, 'Could not read this DOCX file.') from exc
+        if generated is not None:
+            return generated
+        return await run_in_threadpool(_extract_docx_text, content), None, []
 
     if extension in TEXT_EXTENSIONS or (upload.content_type or "").startswith("text/"):
-        return _decode_text_bytes(content), None, []
+        try:
+            text = await run_in_threadpool(structured_text, _decode_text_bytes(content), extension)
+        except (ValueError, TypeError, RecursionError) as exc:
+            raise HTTPException(400, f"Could not parse this structured file: {exc}") from exc
+        return text, None, []
 
     try:
         return _decode_text_bytes(content), None, []
@@ -625,6 +675,93 @@ async def _extract_upload_document(upload: UploadFile):
             status_code=415,
             detail="Unsupported file type. Use PDF, DOCX, or a text-based format such as txt, md, csv, json, yaml, or log.",
         ) from exc
+
+
+def _preview_document(text, extracted_tasks=None, document=None):
+    try:
+        if extracted_tasks is None and text.lstrip().startswith('{'):
+            payload = json.loads(text)
+            if isinstance(payload, dict) and payload.get('format') == 'traqu-workspace':
+                records = _validate_workspace_backup(payload)
+                return {'kind': 'workspace', 'tasks': [], 'document': [], 'warnings': [],
+                        'roadmaps': [{'name': item['name'], 'tasks': len(item['tasks'])} for item in records],
+                        'summary': {'tasks': sum(len(item['tasks']) for item in records), 'sections': 0,
+                                    'dated_tasks': sum(bool(task.get('start_date')) for item in records for task in item['tasks'])}}
+        structured = parser.parse_json_roadmap(text) if extracted_tasks is None else None
+        raw = structured['tasks'] if structured is not None else (
+            parser.parse_tasks(text) if extracted_tasks is None else extracted_tasks)
+        tasks = _validate_parsed_tasks(raw, allow_empty=extracted_tasks == [])
+        outline = (structured['document'] if structured is not None else document) or []
+        if not outline and structured is None and extracted_tasks is None:
+            outline = source_outline(text)
+        warnings = assignment_warnings(text, tasks)
+        if not tasks:
+            warnings.append('No trackable actions were detected. The source can still be saved as reference material.')
+        return {'text': text, 'tasks': tasks, 'document': outline, 'warnings': warnings,
+                'summary': {'tasks': len(tasks), 'sections': len({(t.get('section_key'), t['timeframe']) for t in tasks}),
+                            'dated_tasks': sum(bool(t.get('start_date')) for t in tasks),
+                            'completed_tasks': sum(bool(t.get('is_done')) for t in tasks)}}
+    except (ValueError, TypeError, RecursionError) as exc:
+        raise HTTPException(400, f'Could not parse this roadmap: {exc}') from exc
+
+
+async def _prepare_file(file):
+    text, tasks, document = await _extract_upload_document(file)
+    return await run_in_threadpool(_preview_document, parser.normalize_text(text), tasks, document)
+
+
+@app.post('/roadmaps/preview')
+def preview_text(roadmap: RoadmapUpdate, user_id: str = Depends(get_current_user)):
+    return _preview_document(parser.normalize_text(roadmap.text))
+
+
+@app.post('/roadmaps/preview-file')
+async def preview_file(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
+    return await _prepare_file(file)
+
+
+def _validate_workspace_backup(payload):
+    if payload.get('version') != 1 or not isinstance(payload.get('roadmaps'), list) or not 1 <= len(payload['roadmaps']) <= 100:
+        raise HTTPException(400, 'Use a version 1 Traqu workspace backup containing 1–100 roadmaps.')
+    records, total = [], 0
+    for item in payload['roadmaps']:
+        try:
+            record = RoadmapImport.model_validate(item)
+        except ValidationError as exc:
+            raise HTTPException(400, f'Invalid backup: {exc.errors()[0]["msg"]}') from exc
+        name = _normalize_name(record.name)
+        tasks = _validate_parsed_tasks([task.model_dump(exclude_unset=True) for task in record.tasks], allow_empty=True)
+        total += len(tasks)
+        if total > 10000:
+            raise HTTPException(400, 'A workspace restore can contain at most 10000 tasks.')
+        records.append({'name': name, 'tasks': tasks, 'document': parser.sanitize_document_elements(record.document)})
+    return records
+
+
+@app.get('/backup')
+def backup_workspace(user_id: str = Depends(get_current_user)):
+    roadmaps = db.get_roadmaps(user_id)
+    if len(roadmaps) > 100:
+        raise HTTPException(400, 'Use individual roadmap JSON exports for a workspace with more than 100 roadmaps.')
+    payload = {'format': 'traqu-workspace', 'version': 1,
+               'roadmaps': [db.export_roadmap_data(item['id'], user_id) for item in roadmaps]}
+    if len(json.dumps(payload, ensure_ascii=False).encode()) > MAX_UPLOAD_BYTES:
+        raise HTTPException(413, 'This workspace exceeds the 8 MB restore limit. Save individual roadmap JSON backups instead.')
+    return payload
+
+
+@app.post('/backup/restore-file')
+async def restore_workspace_file(file: UploadFile = File(...), user_id: str = Depends(get_current_user)):
+    content = await _read_upload_limited(file)
+    try:
+        payload = json.loads(_decode_text_bytes(content))
+        if not isinstance(payload, dict) or payload.get('format') != 'traqu-workspace':
+            raise ValueError('This is not a Traqu workspace backup.')
+        records = await run_in_threadpool(_validate_workspace_backup, payload)
+        restored = await run_in_threadpool(db.restore_workspace, records, user_id)
+    except (ValueError, TypeError, RecursionError) as exc:
+        raise HTTPException(400, str(exc)) from exc
+    return {'roadmaps': restored, 'message': f'Restored {len(restored)} roadmaps as new copies.'}
 
 
 @app.post("/roadmaps", response_model=dict)
@@ -637,7 +774,7 @@ def create_roadmap(roadmap: RoadmapCreate, user_id: str = Depends(get_current_us
     _ensure_unique_name(name, user_id)
     tasks = _tasks_from_text(text)
     try:
-        roadmap_id = db.save_imported_roadmap(name, tasks, user_id, raw_text=text)
+        roadmap_id = db.save_imported_roadmap(name, tasks, user_id, raw_text=text, document=source_outline(text))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"id": roadmap_id, "message": "Roadmap created successfully", "tasks": len(tasks)}
@@ -649,7 +786,7 @@ def import_roadmap(roadmap: RoadmapImport, user_id: str = Depends(get_current_us
     _ensure_unique_name(name, user_id)
     tasks = _tasks_from_import(roadmap, preserve_timeframe_ids=False)
     try:
-        roadmap_id = db.save_imported_roadmap(name, tasks, user_id)
+        roadmap_id = db.save_imported_roadmap(name, tasks, user_id, document=parser.sanitize_document_elements(roadmap.document))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"id": roadmap_id, "message": "Roadmap imported successfully", "tasks": len(tasks)}
@@ -662,23 +799,14 @@ async def import_roadmap_file(
     user_id: str = Depends(get_current_user),
 ):
     roadmap_name = _normalize_name(name)
-    _ensure_unique_name(roadmap_name, user_id)
-    extracted_text, extracted_tasks, document = await _extract_upload_document(file)
-    text = parser.normalize_text(extracted_text)
-    json_roadmap = parser.parse_json_roadmap(text) if extracted_tasks is None else None
-    if json_roadmap is not None:
-        tasks = _validate_parsed_tasks(json_roadmap["tasks"])
-        document = json_roadmap["document"]
-    else:
-        tasks = _tasks_from_text(text) if extracted_tasks is None else extracted_tasks
+    if len(roadmap_name) > 200:
+        raise HTTPException(400, "Roadmap name must be 200 characters or fewer.")
+    await run_in_threadpool(_ensure_unique_name, roadmap_name, user_id)
+    result = await _prepare_file(file)
+    text, tasks, document = result['text'], result['tasks'], result['document']
     try:
-        roadmap_id = db.save_imported_roadmap(
-            roadmap_name,
-            tasks,
-            user_id,
-            raw_text=text,
-            document=document,
-        )
+        roadmap_id = await run_in_threadpool(db.save_imported_roadmap,
+            roadmap_name, tasks, user_id, raw_text=text, document=document)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {
@@ -738,7 +866,11 @@ def update_roadmap(
         raise HTTPException(status_code=400, detail="Roadmap text is required.")
 
     _tasks_from_text(text)
-    if not db.update_roadmap_content(roadmap_id, text, parser.parse_roadmap, user_id):
+    try:
+        updated = db.update_roadmap_content(roadmap_id, text, parser.parse_roadmap, user_id, roadmap.revision)
+    except db.RevisionConflict as exc:
+        raise HTTPException(409 if roadmap.revision else 428, str(exc)) from exc
+    if not updated:
         raise HTTPException(status_code=404, detail="Roadmap not found")
     return {"message": "Roadmap updated"}
 
@@ -890,7 +1022,9 @@ def update_roadmap_smart(
     _ensure_unique_name(name, user_id, exclude_roadmap_id=roadmap_id)
     tasks = _tasks_from_import(roadmap)
     try:
-        updated = db.update_roadmap_smart(roadmap_id, name, tasks, user_id)
+        updated = db.update_roadmap_smart(roadmap_id, name, tasks, user_id, revision=roadmap.revision)
+    except db.RevisionConflict as exc:
+        raise HTTPException(409 if roadmap.revision else 428, str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     if not updated:

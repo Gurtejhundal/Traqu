@@ -26,15 +26,15 @@ The app is designed for single-user local use. It removes hosted sign-in frictio
 - Show completion progress on roadmap cards and detail pages.
 - Edit roadmap task structure after import.
 - Export a roadmap to PDF or Word from the roadmap detail page.
-- Scope roadmap, task, and timeframe access by a local owner header.
+- Scope roadmap, task, and timeframe access by a server-assigned workspace identity.
 
 ## Tech Stack
 
 - Frontend: React, Vite, React Router, Lucide icons.
 - Backend: FastAPI, SQLAlchemy, Pydantic.
 - Database: SQLite locally, PostgreSQL-compatible via `DATABASE_URL`.
-- Auth: none. The app is configured for single-user local use.
-- API ownership: the frontend sends `X-Local-User-Id` so local roadmaps stay scoped to one owner key.
+- Auth: private desktop sessions or server-issued signed browser sessions; local browser mode requires explicit loopback configuration.
+- API ownership: the server assigns the owner; caller-supplied local/legacy owner headers are not credentials.
 
 ## Setup
 
@@ -44,7 +44,8 @@ The app is designed for single-user local use. It removes hosted sign-in frictio
 cd backend
 python -m venv .venv
 .venv\Scripts\python.exe -m pip install -r requirements-dev.txt
-.venv\Scripts\python.exe -m uvicorn main:app --reload
+$env:TRAQU_LOCAL_MODE="1"
+.venv\Scripts\python.exe -m uvicorn main:app --host 127.0.0.1 --reload
 ```
 
 The API runs at `http://localhost:8000` by default.
@@ -104,4 +105,6 @@ npm run build
 ## Known Limits
 
 - PDF import extracts embedded text only. It reconstructs layout and repeated page chrome, but it does not OCR scanned documents.
-- The frontend uses a fixed local owner id. This is deliberate for personal use, not suitable for multi-user deployment.
+- Hosted workspaces need durable storage and a stable signing secret. Anonymous browser sessions are not recoverable accounts. See [reliability and configuration](RELIABILITY.md).
+
+On Linux/macOS, start local browser development with `TRAQU_LOCAL_MODE=1 python -m uvicorn main:app --host 127.0.0.1 --reload`. For production storage, signed browser sessions, backups, and import constraints, see [Reliability](RELIABILITY.md).

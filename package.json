@@ -1,6 +1,6 @@
 {
   "name": "traqu-desktop",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
   "repository": {
@@ -45,6 +45,7 @@
     },
     "files": [
       "desktop/*.cjs",
+      "desktop/*.mjs",
       "desktop/*.html",
       "desktop/resources/icon.png",
       "!desktop/*.test.cjs"

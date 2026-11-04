@@ -36,3 +36,4 @@ tmp/
 .DS_Store
 .vercel
 .env*
+backend/.traqu-session-key

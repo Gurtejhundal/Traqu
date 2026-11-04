@@ -3,6 +3,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine, event
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 load_dotenv()
@@ -10,11 +11,12 @@ load_dotenv()
 BACKEND_DIR = Path(__file__).resolve().parent
 
 # Prioritize Env Var (Cloud), fallback to a stable backend-local SQLite file.
-# Vercel's function filesystem is ephemeral; /tmp keeps preview deploys writable.
+# An unconfigured hosted API serves health checks but rejects workspace access.
+# Never silently save user data in ephemeral /tmp storage.
 if os.getenv("DATABASE_URL"):
     DATABASE_URL = os.getenv("DATABASE_URL")
 elif os.getenv("VERCEL"):
-    DATABASE_URL = "sqlite:////tmp/roadmap.db"
+    DATABASE_URL = "sqlite://"
 else:
     DATABASE_URL = f"sqlite:///{(BACKEND_DIR / 'roadmap.db').as_posix()}"
 
@@ -22,7 +24,7 @@ else:
 if DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-is_sqlite = DATABASE_URL.startswith("sqlite:")
+is_sqlite = make_url(DATABASE_URL).get_backend_name() == "sqlite"
 connect_args = {"check_same_thread": False, "timeout": 30} if is_sqlite else {}
 
 engine = create_engine(

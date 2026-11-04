@@ -1,3 +1,4 @@
+from testing_helpers import smart_put
 import time
 import uuid
 
@@ -64,7 +65,7 @@ def test_smart_update_preserves_timeframe_metadata_and_export_round_trips_it(aud
         "end_date": "2026-08-31",
     }
 
-    updated = client.put(
+    updated = smart_put(client,
         f"/roadmaps/{roadmap_id}/smart",
         json={"name": exported.json()["name"], "tasks": exported.json()["tasks"]},
         headers=audit_headers,
@@ -95,7 +96,7 @@ def test_smart_update_without_date_fields_keeps_existing_dates(audit_headers):
     assert saved.status_code == 200
 
     task = client.get(f"/roadmaps/{roadmap_id}/tasks", headers=audit_headers).json()[0]
-    updated = client.put(
+    updated = smart_put(client,
         f"/roadmaps/{roadmap_id}/smart",
         json={
             "name": f"Updated {time.time_ns()}",
@@ -138,7 +139,7 @@ def test_raw_text_update_preserves_state_for_matching_tasks(audit_headers):
 
     updated = client.put(
         f"/roadmaps/{roadmap_id}",
-        json={"text": "Phase 1\n- First task\n- Newly added task"},
+        json={"revision": client.get(f"/roadmaps/{roadmap_id}/export", headers=audit_headers).json()["revision"], "text": "Phase 1\n- First task\n- Newly added task"},
         headers=audit_headers,
     )
     assert updated.status_code == 200, updated.text
@@ -208,7 +209,7 @@ def test_smart_update_rejects_duplicate_name_without_replacing_tasks(audit_heade
     second = _create_roadmap(audit_headers, name=f"Second {time.time_ns()}")
     second_name = client.get(f"/roadmaps/{second['id']}", headers=audit_headers).json()["name"]
 
-    rejected = client.put(
+    rejected = smart_put(client,
         f"/roadmaps/{first['id']}/smart",
         json={
             "name": second_name.upper(),

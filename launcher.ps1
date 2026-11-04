@@ -703,7 +703,13 @@ function Start-Traqu {
                 WindowStyle = "Hidden"
                 PassThru = $true
             }
-            $backendProcess = Start-Process @backendStart
+            $previousLocalMode = $env:TRAQU_LOCAL_MODE
+            try {
+                $env:TRAQU_LOCAL_MODE = "1"
+                $backendProcess = Start-Process @backendStart
+            } finally {
+                $env:TRAQU_LOCAL_MODE = $previousLocalMode
+            }
             Wait-ServiceReady "Backend" $BackendHealthUrl $BackendHealthMarker $backendProcess $BackendOutLog $BackendErrLog
             Save-ServiceRecord "backend" 8000 $BackendPidFile
         }

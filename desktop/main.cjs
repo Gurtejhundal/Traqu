@@ -1,4 +1,4 @@
-const { app, BrowserWindow, Menu, dialog, shell, session } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain } = require('electron');
 const { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync, statSync, renameSync } = require('node:fs');
 const path = require('node:path');
 const { startBackend } = require('./backend.cjs');
@@ -70,7 +70,7 @@ function createWindow() {
     minWidth: 860, minHeight: 600, show: false, title: 'Traqu',
     backgroundColor: '#ffffff', icon: path.join(__dirname, 'resources', 'icon.png'),
     autoHideMenuBar: process.platform !== 'darwin',
-    webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: true },
+    webPreferences: { preload: path.join(__dirname, 'preload.cjs'), nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true, spellcheck: true },
   });
   if (state.maximized) window.maximize();
   window.once('ready-to-show', () => window.show());
@@ -108,6 +108,29 @@ async function launch() {
   log.on('error', () => {});
   log.write(`\n${new Date().toISOString()} Traqu ${app.getVersion()} ${process.platform}/${process.arch}\n`);
   menu();
+  ipcMain.handle('traqu:save-pdf', async (event, payload) => {
+    if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
+        || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
+    const { createPrintHTML } = await import('./print.mjs');
+    const html = createPrintHTML(payload);
+    const filename = path.basename(payload.name).replace(/[\\/:*?"<>|]/g, '_').slice(0,160) || 'Traqu';
+    const destination = await dialog.showSaveDialog(window, { title: 'Save PDF',
+      defaultPath: path.join(app.getPath('downloads'), `${filename.replace(/\s+/g,'_')}_Roadmap.pdf`),
+      filters: [{ name: 'PDF document', extensions: ['pdf'] }],
+    });
+    if (destination.canceled || !destination.filePath) return { canceled: true };
+    const printWindow = new BrowserWindow({ show: false, webPreferences: {
+      sandbox: true, contextIsolation: true, nodeIntegration: false, partition: `traqu-print-${Date.now()}`,
+    } });
+    printWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+    printWindow.webContents.session.webRequest.onBeforeRequest({ urls: ['http://*/*', 'https://*/*'] }, (_details, done) => done({ cancel: true }));
+    try {
+      await printWindow.loadURL(`data:text/html;charset=utf-8;base64,${Buffer.from(html).toString('base64')}`);
+      const bytes = await printWindow.webContents.printToPDF({ printBackground: true, preferCSSPageSize: true, generateTaggedPDF: true });
+      await require('node:fs/promises').writeFile(destination.filePath, bytes);
+      return { canceled: false };
+    } finally { printWindow.destroy(); }
+  });
   await createWindow().loadFile(path.join(__dirname, 'splash.html'));
   backend = await startBackend({
     packaged: app.isPackaged, resourcesPath: process.resourcesPath, root, dataDir, log,

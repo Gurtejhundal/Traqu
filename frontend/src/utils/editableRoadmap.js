@@ -80,6 +80,7 @@ function metadataForTask(task, savedTask, savedSection) {
         is_done: Boolean(task.is_done),
         properties: savedTask?.properties || {},
         blocks: savedTask?.blocks || [],
+        ...(savedTask?.id ? { id: savedTask.id } : {}),
     }
 
     SECTION_METADATA_KEYS.forEach((key) => {
@@ -198,6 +199,7 @@ export function prepareEditableRoadmap(roadmapData) {
         }
 
         const savedTask = {
+            id: task.id,
             editorId: `task-${index + 1}`,
             sectionEditorId: group.section.editorId,
             timeframe,

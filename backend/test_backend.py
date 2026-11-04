@@ -1,3 +1,4 @@
+from testing_helpers import smart_put
 import asyncio
 import time
 from pathlib import Path
@@ -975,7 +976,7 @@ def test_smart_update_round_trips_duplicate_ordered_blocks_from_export():
     exported_tasks = exported.json()["tasks"]
     assert [block["position"] for block in exported_tasks[0]["blocks"]] == [0, 1, 2, 3]
 
-    updated = client.put(
+    updated = smart_put(client,
         f"/roadmaps/{roadmap['id']}/smart",
         json={"name": name, "tasks": exported_tasks},
         headers=headers,

@@ -47,6 +47,7 @@ def create_desktop_app(frontend_dir: Path, token: str):
             supplied = request.headers.get("x-traqo-desktop-token", "")
             if not secrets.compare_digest(supplied.encode(), token.encode()):
                 return JSONResponse({"detail": "Desktop session required."}, status_code=401)
+            request.state.traqu_desktop_owner = "local_owner"
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"

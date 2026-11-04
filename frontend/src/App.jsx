@@ -4,6 +4,7 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import './index.css'
 import { IS_DESKTOP } from './config'
+import { MotionProvider, RouteTransition } from './components/MotionUI'
 
 const RoadmapView = lazy(() => import('./pages/RoadmapView'))
 const Import = lazy(() => import('./pages/Import'))
@@ -16,7 +17,7 @@ function AppRoutes() {
     return (
         <div className="page-content">
             <Suspense fallback={<div className="loading-state" role="status">Opening your workspace…</div>}>
-              <div key={location.pathname} className="route-view">
+              <RouteTransition routeKey={location.pathname}>
                <Routes location={location}>
                 <Route path="/" element={<Home />} />
                 <Route path="/import" element={<Import />} />
@@ -26,7 +27,7 @@ function AppRoutes() {
                 {!IS_DESKTOP && <Route path="/downloads" element={<Downloads />} />}
                 <Route path="*" element={<Navigate to="/" replace />} />
                </Routes>
-              </div>
+              </RouteTransition>
             </Suspense>
         </div>
     )
@@ -34,14 +35,14 @@ function AppRoutes() {
 
 function App() {
     return (
-        <Router>
+        <MotionProvider><Router>
             <div className="app-container">
                 <Navbar />
                 <div className="content-container">
                     <AppRoutes />
                 </div>
             </div>
-        </Router>
+        </Router></MotionProvider>
     )
 }
 

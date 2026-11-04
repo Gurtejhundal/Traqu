@@ -1,5 +1,5 @@
 const { test, expect, _electron: electron } = require('@playwright/test');
-const { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync } = require('node:fs');
+const { mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, copyFileSync } = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 
@@ -111,6 +111,9 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     await page.getByLabel('Roadmap name').fill('Product design · 4-week sprint');
     await page.getByLabel('Plan content').fill(sample);
     await capture(page, 'import');
+    await page.getByRole('button', { name: 'Review import', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Review your import' })).toBeVisible();
+    await capture(page, 'preview');
     await page.getByRole('button', { name: 'Import roadmap', exact: true }).click();
     await expect(page.getByRole('heading', { name: 'Product design · 4-week sprint', exact: true })).toBeVisible();
     const roadmapURL = page.url();
@@ -133,7 +136,8 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     await expect(page.getByRole('progressbar', { name: 'Roadmap completion', exact: true })).toHaveAttribute('aria-valuenow', '13');
 
     // Native export dialogs are redirected to the isolated test directory.
-    await application.evaluate(({ session }, dir) => {
+    await application.evaluate(({ session, dialog }, dir) => {
+      dialog.showSaveDialog = async (_window, options) => ({ canceled: false, filePath: `${dir}/${options.defaultPath.replaceAll('\\', '/').split('/').pop()}` });
       global.__traqoDownloads = [];
       session.defaultSession.on('will-download', (_event, item) => {
         global.__traqoDownloads.push({ filename: item.getFilename(), url: item.getURL() });
@@ -154,6 +158,9 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
       await expect.poll(() => { try { return readFileSync(filename).length; } catch { return 0; } }).toBeGreaterThan(100);
       const bytes = readFileSync(filename);
       expect(bytes.subarray(0, format === 'PDF' ? 4 : 2).toString()).toBe(format === 'PDF' ? '%PDF' : 'PK');
+      const fixtures = path.join(root, 'test-results', 'export-fixtures');
+      mkdirSync(fixtures, { recursive: true });
+      copyFileSync(filename, path.join(fixtures, `roundtrip${extension}`));
     }
 
     // Re-import real exports to exercise frozen DOCX/PDF native dependencies.
@@ -163,9 +170,19 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
       const name = `Round-trip ${extension}`;
       await page.getByLabel('Roadmap name').fill(name);
       await page.locator('#roadmap-file').setInputFiles(path.join(dataDir, readdirSync(dataDir).find((file) => file.endsWith(extension))));
-      await page.getByRole('button', { name: 'Import roadmap', exact: true }).click();
+      await page.getByRole('button', { name: 'Review import', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Review your import' })).toBeVisible();
+    await capture(page, 'preview');
+    await page.getByRole('button', { name: 'Import roadmap', exact: true }).click();
       await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
-      await expect(page.getByRole('progressbar', { name: 'Roadmap completion', exact: true })).toBeVisible();
+      await expect(page.getByRole('progressbar', { name: 'Roadmap completion', exact: true })).toHaveAttribute('aria-valuenow', '13');
+      const imported = await page.evaluate(async () => {
+        const id = location.pathname.split('/').pop();
+        return (await fetch(`/api/roadmaps/${id}/export`)).json();
+      });
+      expect(imported.tasks).toHaveLength(16);
+      expect(imported.tasks.filter(task => task.is_done)).toHaveLength(2);
+      expect(imported.tasks.map(task => task.title).sort()).toEqual(sample.split('\n').filter(line => line.startsWith('- ')).map(line => line.slice(2)).sort());
       await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Library', exact: true }).click();
       page.once('dialog', (dialog) => dialog.accept());
       await page.getByRole('button', { name: `Delete ${name}`, exact: true }).click();
@@ -198,6 +215,64 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     expect(errors).toEqual([]);
   } finally {
     if (application) await application.close();
+    try { copyFileSync(path.join(dataDir, 'logs', 'desktop.log'), path.join(root, 'test-results', 'desktop-debug.log')); } catch { /* Best-effort diagnostics. */ }
     rmSync(dataDir, { recursive: true, force: true });
+  }
+});
+
+test('reviewed imports, stable edits, workspace restore, and reduced motion work together', async () => {
+  const profile = mkdtempSync(path.join(os.tmpdir(), 'traqu-review-e2e-'));
+  let application;
+  try {
+    const env = { ...process.env, TRAQO_DATA_DIR: profile };
+    delete env.ELECTRON_RUN_AS_NODE;
+    application = await electron.launch({ executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'),
+      args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });
+    const page = await application.firstWindow();
+    await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible({ timeout: 60000 });
+    await expect(page.locator('.companion img')).toBeVisible();
+    await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'New', exact: true }).click();
+    await page.getByRole('tab', { name: 'Paste text' }).click();
+    await page.getByLabel('Roadmap name').fill('Reviewed plan');
+    await page.getByLabel('Plan content').fill('## Week 1 · 2026-11-03\n- [x] Completed first step\n- [ ] Write a small demo');
+    await page.getByRole('button', { name: 'Review import', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Review your import' })).toBeVisible();
+    await expect(page.getByLabel('Preview task 1 title')).toHaveValue('Completed first step');
+    await page.getByLabel('Preview task 2 title').fill('Build a useful demo');
+    await page.getByRole('button', { name: 'Import roadmap', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Reviewed plan', exact: true })).toBeVisible();
+    await expect(page.getByRole('progressbar', { name: 'Roadmap completion', exact: true })).toHaveAttribute('aria-valuenow', '50');
+    const before = await page.evaluate(async () => (await fetch(`/api/roadmaps/${location.pathname.split('/').pop()}/export`)).json());
+    await page.getByRole('link', { name: 'Edit raw', exact: true }).click();
+    const outline = page.getByLabel('Roadmap outline');
+    await expect(outline).toBeVisible();
+    await outline.fill((await outline.inputValue()).replace('Build a useful demo', 'Ship a useful demo'));
+    await page.getByRole('button', { name: 'Save changes', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Reviewed plan', exact: true })).toBeVisible();
+    const after = await page.evaluate(async () => (await fetch(`/api/roadmaps/${location.pathname.split('/').pop()}/export`)).json());
+    expect(after.tasks.map(task => task.id)).toEqual(before.tasks.map(task => task.id));
+    expect(after.tasks[1].title).toBe('Ship a useful demo');
+    expect(after.tasks[0].is_done).toBe(true);
+    await application.evaluate(({ session }, dir) => {
+      session.defaultSession.on('will-download', (_event, item) => item.setSavePath(`${dir}/${item.getFilename()}`));
+    }, profile);
+    await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'Library', exact: true }).click();
+    await page.getByRole('button', { name: 'Back up', exact: true }).click();
+    await expect.poll(() => readdirSync(profile).some(file => file.endsWith('.json') && file.startsWith('Traqu-workspace-'))).toBe(true);
+    const backupFile = path.join(profile, readdirSync(profile).find(file => file.endsWith('.json') && file.startsWith('Traqu-workspace-')));
+    expect(JSON.parse(readFileSync(backupFile, 'utf8')).format).toBe('traqu-workspace');
+    await page.getByRole('link', { name: 'Restore', exact: true }).click();
+    await page.locator('#roadmap-file').setInputFiles(backupFile);
+    await page.getByRole('button', { name: 'Review import', exact: true }).click();
+    await expect(page.getByRole('heading', { name: 'Review your import' })).toBeVisible();
+    await page.getByRole('button', { name: 'Restore workspace', exact: true }).click();
+    await expect(page.getByRole('link', { name: 'Open Reviewed plan (restored 2)', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: /^Open / })).toHaveCount(2);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
+    expect(await page.locator('.roadmap-row').first().evaluate(element => getComputedStyle(element).animationName)).toBe('none');
+  } finally {
+    if (application) await application.close();
+    rmSync(profile, { recursive: true, force: true });
   }
 });

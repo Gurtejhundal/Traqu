@@ -66,7 +66,7 @@ The desktop API requires a random 256-bit session credential. Electron attaches 
 
 The renderer uses `sandbox: true`, context isolation, disabled Node integration, a Content Security Policy, permission requests denied except sanitized clipboard writes from the private workspace, and blocked webviews. External HTTP(S)/mail links open in the system handler. Other protocols are rejected. External pages cannot navigate into the privileged app window. These settings follow [Electron's security guidance](https://www.electronjs.org/docs/latest/tutorial/security).
 
-This is a single-user desktop workspace. SQLite is stored as a normal local file, without application-level encryption. The web API's existing local-owner header is not multi-user authentication. The desktop session gate applies only to the desktop host; the ordinary web backend retains its current behavior.
+This is a single-user desktop workspace. SQLite is stored as a normal local file, without application-level encryption. The desktop session gate assigns the local owner after token verification. The ordinary web backend uses separate signed browser sessions and requires hosted configuration; owner headers are ignored. See [reliability](RELIABILITY.md).
 
 ## Develop and package
 
@@ -112,7 +112,7 @@ The Playwright test opens the real Electron app with an isolated profile. It che
 
 For headless Linux CI, use `xvfb-run --auto-servernum npm run test:desktop`. `TRAQO_TEST_NO_SANDBOX=1` applies only an explicit test launch flag on CI hosts that cannot run Chromium's sandbox. The production app does not disable its sandbox.
 
-The original workspace screenshots are real Electron renderer captures with sample plans in a disposable profile. The agent-guide and download-page screenshots are real browser captures; those pages also run inside Electron. Regenerate them with:
+The original workspace screenshots are real Electron renderer captures with sample plans in a disposable profile. The agent-guide and download-page screenshots are real browser captures; those pages are available on the website and excluded from desktop navigation. Regenerate them with:
 
 ```bash
 TRAQO_CAPTURE_DOCS=1 npm run test:desktop
@@ -137,3 +137,7 @@ Route pages load on demand; the initial production JavaScript chunk decreased fr
 The application, installer names, native menus, window title, and README now use **Traqu**. The installer application identifier and Debian package identifier remain stable for upgrade compatibility. Fresh installs use the `Traqu` data folder; an existing installation with a database under the old `Traqo` directory continues using that directory automatically if the new folder has no database. The native File → Show Data Folder action always opens the active directory. Internal `TRAQO_*` developer variables, private API headers, and existing editor markers remain supported for compatibility.
 
 The desktop interface contains Library and New. Downloads and the agent-format guide are website pages; their routes and import-page links are excluded from desktop builds. Desktop pages use short entrance fades, checkbox feedback, and progress transitions. Reduced-motion preferences disable the entrance and checkbox animation.
+
+## Motion, import review, and backups in 1.3
+
+Qu is Traqu’s original paper companion. Short route transitions and press feedback respect reduced-motion settings. Import has a preview with editable titles and incomplete-source warnings. Library provides workspace backup/restore; Save As also offers canonical JSON backup. Native PDF export uses Chromium text layout and includes schedules. SQLite startup retains daily snapshots and upgrades stable identities. Read [Reliability](RELIABILITY.md) for revision checks, recovery, hosted-session configuration, and export limits, and [the reusable design prompt](DESIGN_PROMPT.md) for the motion brief.

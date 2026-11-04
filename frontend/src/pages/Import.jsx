@@ -6,6 +6,7 @@ import { AlertCircle, Check, FileText, FileUp, Upload, X } from 'lucide-react'
 
 import { API_URL, LOCAL_USER_ID, IS_DESKTOP } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
+import { Companion } from '../components/MotionUI'
 import { MAX_ROADMAP_NAME_LENGTH, MAX_ROADMAP_TEXT_LENGTH } from '../utils/roadmapLimits'
 
 const SUPPORTED_FILE_COPY = 'PDF, DOCX, TXT, Markdown, JSON, CSV, and YAML · 8 MB maximum'
@@ -35,6 +36,9 @@ export default function Import() {
     const [sourceMode, setSourceMode] = useState('file')
     const [error, setError] = useState(null)
     const [loading, setLoading] = useState(false)
+    const [preview, setPreview] = useState(null)
+    const [excluded, setExcluded] = useState(new Set())
+    const [previewLimit, setPreviewLimit] = useState(12)
 
     const authHeaders = useMemo(() => ({ 'X-Local-User-Id': LOCAL_USER_ID }), [])
     const inferredName = fileStem(selectedFile?.name)
@@ -51,6 +55,8 @@ export default function Import() {
         }
 
         const previousInferredName = fileStem(selectedFile?.name)
+        setPreview(null)
+        setExcluded(new Set())
         setSelectedFile(file)
         setSourceMode('file')
         setError(null)
@@ -74,6 +80,7 @@ export default function Import() {
 
     const clearFile = () => {
         setSelectedFile(null)
+        setPreview(null)
         setError(null)
         if (fileInputRef.current) fileInputRef.current.value = ''
     }
@@ -121,13 +128,40 @@ export default function Import() {
         setLoading(true)
 
         try {
-            const res = sourceMode === 'file'
-                ? await importFile(roadmapName)
-                : await importText(roadmapName)
+            if (!preview) {
+                let response
+                if (sourceMode === 'file') {
+                    if (!selectedFile) throw new Error('Choose a roadmap file first.')
+                    const body = new FormData()
+                    body.append('file', selectedFile)
+                    response = await axios.post(`${API_URL}/roadmaps/preview-file`, body, { headers: authHeaders })
+                } else {
+                    if (!rawText.trim()) throw new Error('Paste your roadmap text first.')
+                    response = await axios.post(`${API_URL}/roadmaps/preview`, { text: rawText }, { headers: authHeaders })
+                }
+                setPreview(response.data)
+                setExcluded(new Set())
+                setPreviewLimit(12)
+                return
+            }
+            if (preview.kind === 'workspace') {
+                const body = new FormData()
+                body.append('file', selectedFile)
+                const restored = await axios.post(`${API_URL}/backup/restore-file`, body, { headers: authHeaders })
+                navigate('/', { state: { restored: restored.data.roadmaps.length } })
+                return
+            }
+            const selected = preview.tasks.filter((_, index) => !excluded.has(index))
+            if (preview.tasks.length > 0 && selected.length === 0) throw new Error('Include at least one task, or go back and review the source.')
+            const res = selected.length > 0
+                ? await axios.post(`${API_URL}/roadmaps/import`, { name: roadmapName, tasks: selected, document: preview.document }, { headers: authHeaders })
+                : sourceMode === 'file' ? await importFile(roadmapName) : await importText(roadmapName)
             navigate(`/roadmap/${res.data.id}`)
         } catch (importError) {
             console.error(importError)
-            setError(getApiErrorMessage(importError, 'Failed to import roadmap.'))
+            setError(!IS_DESKTOP && importError.response?.status === 503
+                ? 'The online workspace is not available yet. This plan was not saved. Use the desktop app to work privately and offline.'
+                : getApiErrorMessage(importError, 'Failed to import roadmap.'))
         } finally {
             setLoading(false)
         }
@@ -136,15 +170,16 @@ export default function Import() {
     return (
         <main className="import-page">
             <form className="form-container" onSubmit={handleSubmit} aria-busy={loading}>
-                <span className="eyebrow">New document</span>
-                <h1 className="section-title">Import a plan</h1>
-                <p className="form-intro">Traqu reads the document’s hierarchy before creating tasks. Supporting content stays attached as notes and metadata instead of becoming noise.</p>
+                <fieldset className="import-fields" disabled={loading}>
+                <div className="import-heading"><div><span className="eyebrow">A little structure goes a long way</span>
+                <h1 className="section-title">Import a plan</h1></div><Companion mood={loading ? 'thinking' : 'welcome'} size={112} /></div>
+                <p className="form-intro">Bring a document or a pasted plan. Review the sections, actions, and dates before making it yours.</p>
                 {!IS_DESKTOP && <p className="import-guide-link">Planning with an AI tool? <Link to="/agents">Use the agent guide for cleaner imports →</Link></p>}
 
                 <div className="import-capabilities" aria-label="Import behavior">
                     <span><Check size={14} /> Headings become sections</span>
                     <span><Check size={14} /> Table rows stay structured</span>
-                    <span><Check size={14} /> Notes, code, and revision rules stay contextual</span>
+                    <span><Check size={14} /> Source context stays available for review</span>
                 </div>
 
                 <div className="import-source-switch" role="tablist" aria-label="Roadmap import source">
@@ -154,6 +189,7 @@ export default function Import() {
                         aria-selected={sourceMode === 'file'}
                         className={`source-tab ${sourceMode === 'file' ? 'active' : ''}`}
                         onClick={() => {
+                            setPreview(null)
                             setSourceMode('file')
                             setError(null)
                         }}
@@ -166,6 +202,7 @@ export default function Import() {
                         aria-selected={sourceMode === 'text'}
                         className={`source-tab ${sourceMode === 'text' ? 'active' : ''}`}
                         onClick={() => {
+                            setPreview(null)
                             setSourceMode('text')
                             setError(null)
                         }}
@@ -222,11 +259,34 @@ export default function Import() {
                             rows="14"
                             placeholder={`Docker setup\n- Install Docker Desktop\n- Build and run an image\n\nDeployment\n- Push the image to a registry\n- Deploy the container`}
                             value={rawText}
-                            onChange={(event) => setRawText(event.target.value)}
+                            onChange={(event) => { setPreview(null); setRawText(event.target.value) }}
                             maxLength={MAX_ROADMAP_TEXT_LENGTH}
                         />
                     </div>
                 )}
+
+                {preview && <section className="import-preview" aria-labelledby="preview-title">
+                    <div className="preview-summary"><div><h2 id="preview-title">Review your import</h2>
+                        <p>{preview.kind === 'workspace' ? `${preview.roadmaps.length} roadmaps · restored as new copies` : `${preview.tasks.length - excluded.size} actions selected · ${preview.summary.sections} sections · ${preview.summary.dated_tasks} dated actions`}</p>
+                    </div><Check size={20} aria-hidden="true" /></div>
+                    {preview.warnings.map((warning) => <p className="preview-warning" key={warning}>{warning}</p>)}
+                    {preview.kind === 'workspace' ? <><p className="form-intro">Existing plans stay in place. Matching names get a “restored” suffix.</p>
+                        {preview.roadmaps.map((roadmap, index) => <p key={index}>{roadmap.name} · {roadmap.tasks} tasks</p>)}</>
+                        : <><p className="form-intro">Choose which actions to bring in. You can edit each title here.</p>
+                        {preview.tasks.slice(0, previewLimit).map((task, index) => <div className="preview-task" key={index}>
+                            <input type="checkbox" checked={!excluded.has(index)} aria-label={`Include task ${index + 1}`} onChange={() => setExcluded((current) => {
+                                const next = new Set(current)
+                                if (next.has(index)) next.delete(index); else next.add(index)
+                                return next
+                            })} />
+                            <div><input type="text" value={task.title} aria-label={`Preview task ${index + 1} title`} maxLength={4000} onChange={(event) => setPreview((current) => ({ ...current, tasks: current.tasks.map((item, itemIndex) => itemIndex === index ? { ...item, title: event.target.value } : item) }))} />
+                                <small>{task.timeframe}{task.start_date ? ` · ${task.start_date}${task.end_date && task.end_date !== task.start_date ? ` to ${task.end_date}` : ''}` : ''}{task.is_done ? ' · already complete' : ''}</small></div>
+                        </div>)}
+                        </>}
+                    <div className="preview-actions"><button className="btn-quiet" type="button" onClick={() => setPreview(null)}>Back to source</button>
+                        {preview.kind !== 'workspace' && preview.tasks.length > previewLimit && <button className="btn-quiet" type="button" onClick={() => setPreviewLimit((current) => current + 20)}>Show more actions</button>}
+                    </div>
+                </section>}
 
                 {error && (
                     <div className="error-message" role="alert">
@@ -235,8 +295,9 @@ export default function Import() {
                 )}
 
                 <button className="btn-primary full-width" type="submit" disabled={loading}>
-                    {loading ? 'Analyzing document…' : 'Import roadmap'}
+                    {loading ? (preview ? 'Saving your plan…' : 'Reading your plan…') : !preview ? 'Review import' : preview.kind === 'workspace' ? 'Restore workspace' : 'Import roadmap'}
                 </button>
+                </fieldset>
             </form>
         </main>
     )
