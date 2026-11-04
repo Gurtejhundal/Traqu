@@ -144,11 +144,11 @@ React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLi
 
 ## A little company for big plans
 
-<p align="center"><img src="frontend/public/characters/qu.png" width="136" alt="Qu, Traqu’s original folded-paper companion"></p>
+<p align="center"><img src="docs/readme/qu.gif" width="136" alt="Qu, Traqu’s original monochrome companion, running, waving, and swaying"></p>
 
-Meet **Qu**. Short page transitions, gentle press feedback, and a small companion give the workspace a little life, with reduced-motion support. Import review catches incomplete plans before saving; JSON backup/restore and stable editing help keep progress safe.
+Meet **Qu**, a little ink creature for small, steady progress. Click to hop, double-click to run, or use S to sway, W to wave, and Escape to rest. Short page transitions and gentle press feedback give the workspace a little life, with reduced-motion support. Import review catches incomplete plans before saving; JSON backup/restore and stable editing help keep progress safe.
 
-[Design and motion prompt](docs/DESIGN_PROMPT.md) · [Import, backup, and hosting details](docs/RELIABILITY.md)
+[Design and motion prompt](docs/DESIGN_PROMPT.md) · [Meet Qu](docs/CHARACTER.md) · [Import, backup, and hosting details](docs/RELIABILITY.md)
 
 
 ## Buy me a coffee

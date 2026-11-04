@@ -1,4 +1,5 @@
 import json
+from contextlib import closing
 from io import BytesIO
 import sqlite3
 from uuid import uuid4
@@ -227,9 +228,29 @@ def test_own_word_exports_keep_tasks_dates_notes_and_skip_attribution(workspace)
     assert 'Context' in tasks[0]['blocks'][0]['data']['text']
 
 
+def test_sqlite_snapshot_is_readable_and_releases_file_handles(monkeypatch, tmp_path):
+    path = tmp_path / 'workspace.db'
+    with closing(sqlite3.connect(path)) as source:
+        source.execute('CREATE TABLE evidence(value TEXT)')
+        source.execute("INSERT INTO evidence VALUES ('Keep my progress')")
+        source.commit()
+    engine = create_engine(f'sqlite:///{path}')
+    monkeypatch.setattr(db, 'engine', engine)
+    try:
+        db._snapshot_local_database()
+        snapshot, = (tmp_path / 'backups').glob('*.db')
+        # Windows forbids this rename while the backup connection is open.
+        moved = snapshot.replace(snapshot.with_suffix('.verified'))
+        with closing(sqlite3.connect(moved)) as restored:
+            assert restored.execute('SELECT value FROM evidence').fetchone() == ('Keep my progress',)
+        assert not list((tmp_path / 'backups').glob('*.pending'))
+    finally:
+        engine.dispose()
+
+
 def test_legacy_sqlite_upgrade_preserves_ids_and_prevents_reuse(monkeypatch, tmp_path):
     path = tmp_path / 'legacy.db'
-    with sqlite3.connect(path) as connection:
+    with closing(sqlite3.connect(path)) as connection:
         connection.executescript('''
         CREATE TABLE roadmaps(id INTEGER PRIMARY KEY,user_id VARCHAR,name VARCHAR,raw_text TEXT,created_at VARCHAR);
         CREATE TABLE timeframes(id INTEGER PRIMARY KEY,roadmap_id INTEGER REFERENCES roadmaps(id),label VARCHAR,granularity VARCHAR);

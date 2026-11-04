@@ -1,12 +1,12 @@
 import { useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Link } from 'react-router-dom'
 import axios from 'axios'
 import { AlertCircle, Check, FileText, FileUp, Upload, X } from 'lucide-react'
 
 import { API_URL, LOCAL_USER_ID, IS_DESKTOP } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { Companion } from '../components/MotionUI'
+import ImportSkill from '../components/ImportSkill'
 import { MAX_ROADMAP_NAME_LENGTH, MAX_ROADMAP_TEXT_LENGTH } from '../utils/roadmapLimits'
 
 const SUPPORTED_FILE_COPY = 'PDF, DOCX, TXT, Markdown, JSON, CSV, and YAML · 8 MB maximum'
@@ -174,7 +174,6 @@ export default function Import() {
                 <div className="import-heading"><div><span className="eyebrow">A little structure goes a long way</span>
                 <h1 className="section-title">Import a plan</h1></div><Companion mood={loading ? 'thinking' : 'welcome'} size={112} /></div>
                 <p className="form-intro">Bring a document or a pasted plan. Review the sections, actions, and dates before making it yours.</p>
-                {!IS_DESKTOP && <p className="import-guide-link">Planning with an AI tool? <Link to="/agents">Use the agent guide for cleaner imports →</Link></p>}
 
                 <div className="import-capabilities" aria-label="Import behavior">
                     <span><Check size={14} /> Headings become sections</span>
@@ -210,6 +209,8 @@ export default function Import() {
                         <FileText size={16} /> Paste text
                     </button>
                 </div>
+
+                <ImportSkill />
 
                 <div className="form-group">
                     <label htmlFor="roadmap-name">Roadmap name</label>

@@ -141,3 +141,7 @@ The desktop interface contains Library and New. Downloads and the agent-format g
 ## Motion, import review, and backups in 1.3
 
 Qu is Traqu’s original paper companion. Short route transitions and press feedback respect reduced-motion settings. Import has a preview with editable titles and incomplete-source warnings. Library provides workspace backup/restore; Save As also offers canonical JSON backup. Native PDF export uses Chromium text layout and includes schedules. SQLite startup retains daily snapshots and upgrades stable identities. Read [Reliability](RELIABILITY.md) for revision checks, recovery, hosted-session configuration, and export limits, and [the reusable design prompt](DESIGN_PROMPT.md) for the motion brief.
+
+## Interactive companion and import skill
+
+Qu is a small monochrome companion, with pointer/keyboard reactions and quiet rests. See [character controls](CHARACTER.md). The Import screen includes an expandable AI agent skill directly below Upload file / Paste text. Copy the full instructions or download SKILL.md; both work offline, without adding a desktop navigation section.

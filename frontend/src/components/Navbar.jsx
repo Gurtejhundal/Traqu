@@ -2,6 +2,7 @@ import { Link, useLocation } from 'react-router-dom'
 import { Plus, Library, Sparkles, ArrowDownToLine } from 'lucide-react'
 import TraquLogo from './TraquLogo'
 import { IS_DESKTOP } from '../config'
+import { Companion } from './MotionUI'
 
 export default function Navbar() {
     const location = useLocation()
@@ -47,7 +48,10 @@ export default function Navbar() {
                     })}
                 </nav>
 
-                <span className="local-status"><i aria-hidden="true" /> {IS_DESKTOP ? 'Local' : 'Web'}</span>
+                <div className="navbar-status">
+                    {/\/(?:roadmap|edit)\//.test(location.pathname) && <Companion size={48} className="qu-mini" />}
+                    <span className="local-status"><i aria-hidden="true" /> {IS_DESKTOP ? 'Local' : 'Web'}</span>
+                </div>
             </div>
         </header>
     )

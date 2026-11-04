@@ -89,7 +89,7 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
     expect(badHostStatus).toBe(400);
     expect(await page.evaluate(() => typeof window.require)).toBe('undefined');
     expect(await page.evaluate(() => typeof window.process)).toBe('undefined');
-    await capture(page);
+    await capture(page, 'empty-library');
 
     await expect(page.getByRole('link', { name: 'Traqu home' })).toBeVisible();
     await expect(page).toHaveTitle('Traqu');
@@ -231,7 +231,17 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
     const page = await application.firstWindow();
     await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible({ timeout: 60000 });
     await expect(page.locator('.companion img')).toBeVisible();
+    const qu = page.getByRole('button', { name: 'Play with Qu, your Traqu companion' });
+    await qu.dblclick();
+    await expect(qu).toHaveAttribute('data-state', 'run');
+    await qu.press('Escape');
+    await expect(qu).toHaveAttribute('data-state', 'steady');
     await page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link', { name: 'New', exact: true }).click();
+    const skill = page.locator('.import-skill');
+    await skill.locator('summary').click();
+    await expect(page.getByLabel('Skill instructions')).toHaveValue(/# Plans that survive import/);
+    expect(await page.evaluate(async () => (await fetch('/agents/SKILL.md')).text())).toContain('# Plans that survive import');
+    await skill.locator('summary').click();
     await page.getByRole('tab', { name: 'Paste text' }).click();
     await page.getByLabel('Roadmap name').fill('Reviewed plan');
     await page.getByLabel('Plan content').fill('## Week 1 · 2026-11-03\n- [x] Completed first step\n- [ ] Write a small demo');
@@ -271,6 +281,10 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
     await page.emulateMedia({ reducedMotion: 'reduce' });
     expect(await page.evaluate(() => matchMedia('(prefers-reduced-motion: reduce)').matches)).toBe(true);
     expect(await page.locator('.roadmap-row').first().evaluate(element => getComputedStyle(element).animationName)).toBe('none');
+    await page.getByRole('link', { name: /^Open Reviewed plan$/, exact: true }).click();
+    const quietQu = page.getByRole('button', { name: 'Play with Qu, your Traqu companion' }).first();
+    await quietQu.dblclick();
+    await expect(quietQu).toHaveAttribute('data-state', 'steady');
   } finally {
     if (application) await application.close();
     rmSync(profile, { recursive: true, force: true });

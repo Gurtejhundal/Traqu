@@ -1,4 +1,5 @@
 import json
+from contextlib import closing
 from collections import defaultdict, deque
 from datetime import datetime
 from pathlib import Path
@@ -36,8 +37,11 @@ def _snapshot_local_database():
         return
     temporary = destination.with_suffix('.pending')
     try:
-        with sqlite3.connect(source) as origin, sqlite3.connect(temporary) as backup:
-            origin.backup(backup)
+        # A SQLite connection context commits but does not close the handle.
+        # Windows requires both handles closed before replacing the snapshot.
+        with closing(sqlite3.connect(source)) as origin, closing(sqlite3.connect(temporary)) as backup:
+            with backup:
+                origin.backup(backup)
         temporary.chmod(0o600)
         temporary.replace(destination)
         for older in sorted(directory.glob('roadmap-*.db'), reverse=True)[7:]:
