@@ -38,7 +38,8 @@ jobs:
             frontend/package-lock.json
       - uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          # ARM64's stable ABI wheels require Python 3.14; other targets retain 3.12.
+          python-version: ${{ matrix.os == 'windows-11-arm' && '3.14' || '3.12' }}
           architecture: ${{ matrix.arch }}
           cache: pip
           cache-dependency-path: 'backend/requirements*.txt'
