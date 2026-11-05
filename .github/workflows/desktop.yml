@@ -86,7 +86,7 @@ jobs:
         if: runner.os == 'Windows'
         run: npm run test:desktop
         env:
-          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'win-arm64-unpacked' || 'win-unpacked' }}/Traqu.exe'
+          TRAQO_TEST_EXECUTABLE: "${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'win-arm64-unpacked' || 'win-unpacked' }}/Traqu.exe"
       - name: Test packaged app (macOS)
         if: runner.os == 'macOS'
         run: npm run test:desktop
