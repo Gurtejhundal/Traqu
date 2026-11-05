@@ -38,7 +38,7 @@ jobs:
             frontend/package-lock.json
       - uses: actions/setup-python@v6
         with:
-          # ARM64's stable ABI wheels require Python 3.14; other targets retain 3.12.
+          # Use the supported native ARM runtime; other targets retain 3.12.
           python-version: ${{ matrix.os == 'windows-11-arm' && '3.14' || '3.12' }}
           architecture: ${{ matrix.arch }}
           cache: pip
@@ -47,6 +47,19 @@ jobs:
         if: runner.os == 'Linux'
         run: sudo apt-get update && sudo apt-get install -y libfuse2 libgtk-3-0 libnss3 libasound2 xvfb
       - run: npm ci
+      - name: Prepare ARM64 OpenSSL for the PDF parser
+        if: matrix.os == 'windows-11-arm'
+        shell: pwsh
+        run: |
+          $traquVcpkg = Join-Path $env:RUNNER_TEMP 'traqu-vcpkg'
+          git clone --depth 1 --branch 2026.10.16 https://github.com/microsoft/vcpkg.git $traquVcpkg
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$traquVcpkg\bootstrap-vcpkg.bat" -disableMetrics
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & "$traquVcpkg\vcpkg.exe" install openssl:arm64-windows-static-md --disable-metrics
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          "OPENSSL_DIR=$traquVcpkg\installed\arm64-windows-static-md" >> $env:GITHUB_ENV
+          "OPENSSL_STATIC=1" >> $env:GITHUB_ENV
       - run: npm run setup
       - run: npm test
       - run: npm test --prefix frontend
