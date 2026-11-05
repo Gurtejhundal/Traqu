@@ -137,7 +137,7 @@ jobs:
       - run: npm run sync:android
       - name: Build installable Android preview
         working-directory: android
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -150,7 +150,7 @@ jobs:
           arch: x86_64
           profile: pixel_2
           disable-animations: true
-          script: adb shell svc wifi disable; adb shell svc data disable; cd android && ./gradlew connectedDebugAndroidTest --no-daemon
+          script: adb shell svc wifi disable; adb shell svc data disable; cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon
       - name: Collect Android preview
         run: |
           mkdir -p release
