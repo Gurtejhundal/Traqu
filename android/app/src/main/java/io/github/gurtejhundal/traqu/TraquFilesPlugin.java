@@ -4,7 +4,11 @@ import android.app.Activity;
 import android.content.Intent;
 import android.print.PrintAttributes;
 import android.print.PrintManager;
-import android.print.PrintJob;
+import android.print.PrintDocumentAdapter;
+import android.print.PageRange;
+import android.os.Bundle;
+import android.os.CancellationSignal;
+import android.os.ParcelFileDescriptor;
 import android.util.Base64;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
@@ -83,17 +87,23 @@ public class TraquFilesPlugin extends Plugin {
                     started = true;
                     PrintManager manager = (PrintManager) getActivity().getSystemService(Activity.PRINT_SERVICE);
                     if (manager == null) { call.reject("Printing is not available on this device."); printView.destroy(); return; }
-                    PrintJob job = manager.print("Traqu roadmap", view.createPrintDocumentAdapter("Traqu roadmap"), new PrintAttributes.Builder().build());
-                    PrintManager.PrintJobStateChangeListener listener = new PrintManager.PrintJobStateChangeListener() {
-                        @Override public void onPrintJobStateChanged(android.print.PrintJobId changed) {
-                            if (!changed.equals(job.getId())) return;
-                            if (job.isCompleted() || job.isCancelled() || job.isFailed()) {
-                                manager.removePrintJobStateChangeListener(this);
-                                printView.destroy();
-                            }
+                    PrintDocumentAdapter delegate = view.createPrintDocumentAdapter("Traqu roadmap");
+                    PrintDocumentAdapter adapter = new PrintDocumentAdapter() {
+                        @Override public void onStart() { delegate.onStart(); }
+                        @Override public void onLayout(PrintAttributes oldAttributes, PrintAttributes newAttributes,
+                                CancellationSignal cancellation, LayoutResultCallback callback, Bundle extras) {
+                            delegate.onLayout(oldAttributes, newAttributes, cancellation, callback, extras);
+                        }
+                        @Override public void onWrite(PageRange[] pages, ParcelFileDescriptor destination,
+                                CancellationSignal cancellation, WriteResultCallback callback) {
+                            delegate.onWrite(pages, destination, cancellation, callback);
+                        }
+                        @Override public void onFinish() {
+                            try { delegate.onFinish(); } finally { printView.destroy(); }
                         }
                     };
-                    manager.addPrintJobStateChangeListener(listener);
+                    try { manager.print("Traqu roadmap", adapter, new PrintAttributes.Builder().build()); }
+                    catch (Exception error) { printView.destroy(); call.reject("Printing could not be opened.", error); return; }
                     call.resolve();
                 }
             });

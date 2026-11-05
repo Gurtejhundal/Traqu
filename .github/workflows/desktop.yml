@@ -128,7 +128,9 @@ jobs:
         with:
           distribution: temurin
           java-version: 21
-      - uses: android-actions/setup-android@v3
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
       - run: npm ci
       - run: npm ci --prefix frontend
       - run: npm run test:mobile
