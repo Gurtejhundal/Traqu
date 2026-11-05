@@ -14,7 +14,7 @@
   <a href="#buy-me-a-coffee"><b>Buy me a coffee ☕</b></a>
 </p>
 
-<p align="center"><code>Linux · Windows · macOS</code> &nbsp; <code>offline ready</code> &nbsp; <code>no account</code> &nbsp; <code>saved on your computer</code></p>
+<p align="center"><code>Android · Linux · Windows · macOS</code> &nbsp; <code>offline ready</code> &nbsp; <code>no account</code> &nbsp; <code>saved on your device</code></p>
 
 ---
 
@@ -33,24 +33,56 @@ The study plan is in a PDF. The project roadmap is in a chat. The next step is s
 
 ## Get the app
 
-| Your computer | Direct download |
-| --- | --- |
-| <img src="frontend/public/os/windows.svg" width="16" height="16" alt=""> **Windows x64** | [Setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-x64.exe) |
-| <img src="frontend/public/os/windows.svg" width="16" height="16" alt=""> **Windows ARM64** | [ARM64 setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-arm64.exe) |
-| **Android preview** | [Preview APK](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Android-preview.apk) · [scope and build instructions](docs/ANDROID.md) |
-| <img src="frontend/public/os/linux.svg" width="16" height="16" alt=""> **Linux x64** | [AppImage](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.AppImage) · [Debian / Ubuntu .deb](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.deb) |
-| <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Apple Silicon** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.zip) |
-| <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Intel** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.zip) |
+Pick your device. Bring a plan. Start with Day 1.
 
-<p align="center"><a href="https://traqu.vercel.app/downloads"><b>↓ Desktop download guide</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest"><b>Release notes &amp; checksums</b></a></p>
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3><img src="frontend/public/os/android.svg" width="24" height="24" alt=""> &nbsp; Android</h3>
+      <p>Your daily plans, progress and little companion. Right on your phone.</p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/download/android-v1.5.1/Traqu-Android.apk"><b>↓ Download APK</b></a></p>
+      <sub>Android 7 or newer</sub>
+    </td>
+    <td width="50%" valign="top">
+      <h3><img src="frontend/public/os/windows.svg" width="24" height="24" alt=""> &nbsp; Windows</h3>
+      <p>A quiet home for your plans, ready whenever you are.</p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-x64.exe"><b>↓ Intel / AMD</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-arm64.exe"><b>↓ ARM64</b></a></p>
+      <sub>Windows 10 / 11 · ARM64 requires Windows 11</sub>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3><img src="frontend/public/os/apple.svg" width="24" height="24" alt=""> &nbsp; macOS</h3>
+      <p>Make a little room for the next small step.</p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.dmg"><b>↓ Apple Silicon</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.dmg"><b>↓ Intel</b></a></p>
+      <sub>macOS 13 or newer · DMG installers</sub>
+    </td>
+    <td width="50%" valign="top">
+      <h3><img src="frontend/public/os/linux.svg" width="24" height="24" alt=""> &nbsp; Linux</h3>
+      <p>Your workspace, at home on your desktop.</p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.AppImage"><b>↓ AppImage</b></a> &nbsp; · &nbsp; <a href="https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.deb"><b>↓ DEB</b></a></p>
+      <sub>64-bit Intel / AMD · Ubuntu 22.04+ baseline</sub>
+    </td>
+  </tr>
+</table>
 
-Download directly: no Actions artifact ZIP or GitHub sign-in required. Releases stay available after temporary CI artifacts expire. Each release publishes only after source and packaged-app tests pass on all four native targets.
+<p align="center"><sub>Works offline &nbsp; · &nbsp; No account &nbsp; · &nbsp; Saved on your device</sub></p>
 
-**Install:** run the Windows setup; on Mac, open the DMG and drag Traqu to Applications; on Debian/Ubuntu install the DEB with your package manager. For AppImage, enable execution in file properties (or `chmod +x Traqu-Linux-x64.AppImage`) and open it. AppImage may need FUSE 2 from your distribution.
+<details>
+<summary>Installation help &amp; release details</summary>
 
-The desktop app includes its Python engine and interface, works offline, and saves to your computer. Baselines: Windows 10/11 x64, Windows 11 ARM64, macOS 13+ (Intel or Apple Silicon), and Linux x64 builds made on Ubuntu 22.04. Windows ARM64 includes a native ARM64 backend. Linux ARM builds are not provided. Android is an offline preview with a separate on-device workspace; see its documented limits before installing.
+- **Android:** open the APK on your phone, allow installation from your browser or file manager when prompted, then open Traqu. [Android guide](docs/ANDROID.md).
+- **Windows:** open the setup file and choose an installation folder.
+- **macOS:** open the DMG and drag Traqu to Applications. [Apple Silicon ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.zip) · [Intel ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.zip).
+- **Linux:** install the DEB with your package manager, or allow execution in the AppImage's file properties and open it. AppImage may need FUSE 2. Linux ARM builds are not provided.
 
-Builds are **unsigned**: Windows may show SmartScreen and macOS may require approval under System Settings → Privacy & Security. Signing and Apple notarization are not configured. See [Electron platform support](https://github.com/electron/electron#platform-support) and the [macOS 13 minimum introduced in Electron 44](https://www.electronjs.org/blog/electron-44-0).
+Desktop installers include the Python engine. Windows ARM64 includes a native ARM64 backend. Desktop builds are unsigned; Windows may show SmartScreen and macOS may require approval in Privacy & Security. Android signing and update details are in the Android guide. Export a workspace backup before uninstalling or replacing an installation.
+
+Downloads do not require GitHub sign-in. Android APKs are released independently after offline emulator tests pass. Desktop releases follow source and packaged-app tests on all five desktop targets.
+
+[Download guide](https://traqu.vercel.app/downloads) · [All releases & checksums](https://github.com/Gurtejhundal/Traqu/releases)
+
+</details>
 
 ## Plan with an AI agent
 

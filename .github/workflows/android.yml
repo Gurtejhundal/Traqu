@@ -1,0 +1,117 @@
+name: Android APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'android/**'
+      - 'frontend/src/mobile/**'
+      - 'scripts/build-mobile.cjs'
+      - 'capacitor.config.json'
+      - '.github/workflows/android.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-apk-release
+  cancel-in-progress: false
+
+jobs:
+  android:
+    name: Build and verify Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v4
+        with:
+          packages: platform-tools
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm run test:mobile
+      - run: npm run sync:android
+      - name: Build installable Android APK
+        working-directory: android
+        run: ./gradlew :app:assembleDebug :app:assembleDebugAndroidTest --no-daemon
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify offline workspace on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: adb shell svc wifi disable; adb shell svc data disable; cd android && ./gradlew :app:connectedDebugAndroidTest --no-daemon
+      - name: Collect Android APK
+        run: |
+          mkdir -p release
+          cp android/app/build/outputs/apk/debug/app-debug.apk release/Traqu-Android.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Traqu-Android
+          path: release/Traqu-Android.apk
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: diagnostics-Android
+          path: |
+            android/app/build/reports/
+            android/app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+
+  publish:
+    name: Publish Android APK
+    needs: android
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: Traqu-Android
+          path: apk
+      - name: Publish independent Android release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          VERSION=$(awk '/versionName/ {gsub(/"/, "", $2); print $2; exit}' android/app/build.gradle)
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]
+          TAG="android-v$VERSION"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "Android $VERSION is already published. Bump its version for another release."
+            exit 0
+          fi
+          cd apk
+          sha256sum Traqu-Android.apk > SHA256SUMS.txt
+          cat > release-notes.md <<'NOTES'
+          Your plans. Your phone. One day at a time.
+
+          Traqu for Android works on its own, offline and without an account. Import a daily roadmap, start Day 1, check off tasks and watch your consistency grow. Personalize your profile and save or share your progress card.
+
+          Download **Traqu-Android.apk**, open it on your phone and follow Android's installation prompt. Requires Android 7+ and a current Android System WebView.
+
+          Verified on an Android emulator with Wi-Fi and mobile data disabled: daily import, profile saving and persistence after restarting the activity.
+
+          This sideload build uses a development signing certificate. Export a workspace backup before replacing an existing installation. Signing and import details: [Android guide](https://github.com/Gurtejhundal/Traqu/blob/main/docs/ANDROID.md).
+          NOTES
+          gh release create "$TAG" Traqu-Android.apk SHA256SUMS.txt --target "$GITHUB_SHA" --title "Traqu for Android $VERSION" --notes-file release-notes.md --latest=false

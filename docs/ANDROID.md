@@ -1,8 +1,8 @@
-# Android offline preview
+# Traqu for Android
 
-Traqu's Android app bundles the React interface and a local workspace using Android WebView's IndexedDB. It does not connect to the hosted API, need Python on the phone, or require an account. Photos, tasks, notes, preferences and recorded activity remain in this app's storage. There is no automatic desktop sync. Export a workspace backup to move plans between devices.
+Traqu's Android app bundles the React interface and a local workspace using Android WebView's IndexedDB. It does not connect to the hosted API, need Python on the phone, or require an account. Photos, tasks, notes, preferences and recorded activity remain in this app's storage. Android is a standalone app: install it, import a plan and track your days on your phone.
 
-## Supported in this preview
+## On your phone
 
 - JSON, Markdown and pasted daily plans with Week → Day structure, metadata and notes.
 - Daily sessions, checkboxes, editing, sections, task notes and real activity/streak history.
@@ -13,9 +13,9 @@ Traqu's Android app bundles the React interface and a local workspace using Andr
 
 ## Limits before installing
 
-- PDF/DOCX text extraction differs from the desktop layout-aware parser. Prefer the matching JSON for tables or complicated layouts. Scanned image-only PDFs need OCR outside this preview.
+- PDF/DOCX text extraction differs from the desktop layout-aware parser. Prefer the matching JSON for tables or complicated layouts. Scanned image-only PDFs need OCR before importing.
 - CSV import and automatic daily recovery of older flat imports remain desktop features.
-- The APK is a **debug-signed preview**, not a production Play Store release. CI preview certificates are not a durable production signing identity. Back up before replacing a preview; changing signing identities requires uninstalling the previous APK. Uninstalling or clearing app data deletes local work. Production distribution needs a privately retained signing key and an update policy.
+- The downloadable APK uses a **development signing certificate** and is distributed directly, outside the Play Store. Build certificates are not yet retained across CI runs, so a later build may require uninstalling the previous APK. Export a workspace backup before replacing an installation; uninstalling or clearing app data deletes local work. A privately retained production signing key is required for guaranteed in-place upgrades.
 - Use a current Android System WebView. Minimum Android API: 24. No contacts, location, camera or broad storage permission is requested. Photo selection uses the system picker; exported files go to destinations chosen by the user.
 - Android system backups are disabled; make explicit Traqu workspace backups.
 
@@ -32,8 +32,12 @@ cd android
 ./gradlew assembleDebug
 ```
 
-The installable preview is `android/app/build/outputs/apk/debug/app-debug.apk`.
+The installable APK is `android/app/build/outputs/apk/debug/app-debug.apk`.
 
 `npm run build:mobile` always selects the offline adapter and disables desktop-only behavior. `npm run build:frontend` always selects the Electron interface and its same-origin Python API. Do not mix the output directories when manually packaging: run the appropriate build immediately before packaging/sync.
 
 Native CI builds the APK, starts an Android emulator with Wi-Fi and mobile data disabled, imports a daily plan and verifies profile persistence across activity recreation. An installer is only published after all required jobs pass.
+
+## Android releases
+
+Android has its own version in `android/app/build.gradle`. Bump both `versionName` and `versionCode` for an update. The Android workflow builds and tests the APK offline, then publishes `Traqu-Android.apk` and its checksum under `android-v<version>`. Android releases do not replace the latest desktop release. Update the Android download URL in the README and website when publishing a new version.
