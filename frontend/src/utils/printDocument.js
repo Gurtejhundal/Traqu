@@ -1,3 +1,4 @@
+import { IS_MOBILE } from '../config'
 import { createPrintHTML } from '../../../desktop/print.mjs'
 import { documentElementToLines, formatSemanticValue, formatTaskBlockForText } from './taskSemantics.js'
 
@@ -23,6 +24,10 @@ export function exportDocumentData(snapshot) {
 
 export async function savePrintablePDF(snapshot) {
     const payload = exportDocumentData(snapshot)
+    if (IS_MOBILE) {
+        const { registerPlugin } = await import('@capacitor/core')
+        return registerPlugin('TraquFiles').print({ html: createPrintHTML(payload) })
+    }
     if (window.traquDesktop?.savePDF) return window.traquDesktop.savePDF(payload)
     const frame = document.createElement('iframe')
     frame.title = 'Print roadmap'

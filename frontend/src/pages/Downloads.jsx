@@ -4,8 +4,11 @@ import { ArrowDownToLine, ArrowUpRight, Check } from 'lucide-react'
 const releases = 'https://github.com/Gurtejhundal/Traqu/releases'
 const asset = (name) => `${releases}/latest/download/${name}`
 const platforms = [
-    { name: 'Windows', detail: 'Windows 10 / 11 · 64-bit Intel & AMD', logo: '/os/windows.svg',
-        files: [['Setup .exe', 'Traqu-Windows-x64.exe']],
+    { name: 'Android preview', detail: 'Android 7+ · current Android System WebView', logo: '/os/android.svg',
+        files: [['Preview .apk', 'Traqu-Android-preview.apk']],
+        steps: 'An offline preview with a separate on-device workspace. Back up before replacing a preview or uninstalling. JSON is best for complex plans; see the Android guide below.' },
+    { name: 'Windows', detail: 'Windows 10 / 11 x64 · Windows 11 ARM64', logo: '/os/windows.svg',
+        files: [['Intel / AMD .exe', 'Traqu-Windows-x64.exe'], ['ARM64 .exe', 'Traqu-Windows-arm64.exe']],
         steps: 'Open the setup file, choose an install location, and launch Traqu.' },
     { name: 'Linux', detail: '64-bit Intel & AMD · Ubuntu 22.04 or newer baseline', logo: '/os/linux.svg',
         files: [['AppImage', 'Traqu-Linux-x64.AppImage'], ['Debian / Ubuntu .deb', 'Traqu-Linux-x64.deb']],
@@ -19,10 +22,10 @@ export default function Downloads() {
     return (
         <main className="guide-page">
             <header className="guide-hero">
-                <span className="eyebrow">At home on your computer</span>
-                <h1>Your plans.<br /><span>Your desktop.</span></h1>
+                <span className="eyebrow">At home on your devices</span>
+                <h1>Your plans.<br /><span>Your space.</span></h1>
                 <p>A quiet space to turn a plan into progress. Install once, bring your documents, and keep working offline.</p>
-                <div className="guide-pills"><span><Check size={14} /> No account</span><span><Check size={14} /> Saved on your computer</span><span><Check size={14} /> Python included</span></div>
+                <div className="guide-pills"><span><Check size={14} /> No account</span><span><Check size={14} /> Saved on your computer</span><span><Check size={14} /> Works offline</span></div>
             </header>
             <div className="download-grid">
                 {platforms.map(({ name, detail, logo, files, steps }, index) => (
@@ -37,7 +40,9 @@ export default function Downloads() {
             <section className="guide-note">
                 <h2>A few details before you install</h2>
                 <p>These builds are currently unsigned. Windows may show SmartScreen; macOS may require approval under System Settings → Privacy &amp; Security. Only open a download you trust.</p>
-                <p>Linux AppImage may need FUSE 2 from your distribution. Prefer the DEB on Debian / Ubuntu if AppImage does not launch. ARM Linux and ARM Windows builds are not available yet.</p>
+                <p>Linux AppImage may need FUSE 2 from your distribution. Prefer the DEB on Debian / Ubuntu if AppImage does not launch. Windows ARM64 has a native build. ARM Linux is not available yet.</p>
+                <p>The Android APK is a debug-signed preview. Its signing identity may change between previews. Export a workspace backup before replacing it; Android and desktop do not automatically sync.</p>
+                <a className="text-link" href="https://github.com/Gurtejhundal/Traqu/blob/main/docs/ANDROID.md" target="_blank" rel="noreferrer">Android preview scope and upgrade notes <ArrowUpRight size={14} /></a>
                 <p>Installers are published after native tests pass on Linux, Windows, and both Mac architectures. Performance depends on your hardware and document size.</p>
                 <a className="text-link" href={releases} target="_blank" rel="noreferrer">Release notes, Mac ZIP files &amp; SHA-256 checksums <ArrowUpRight size={14} /></a>
             </section>

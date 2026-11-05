@@ -3,13 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import { AlertCircle, Check, FileText, FileUp, Upload, X } from 'lucide-react'
 
-import { API_URL, LOCAL_USER_ID, IS_DESKTOP } from '../config'
+import { API_URL, LOCAL_USER_ID, IS_NATIVE, IS_MOBILE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { Companion } from '../components/MotionUI'
 import ImportSkill from '../components/ImportSkill'
 import { MAX_ROADMAP_NAME_LENGTH, MAX_ROADMAP_TEXT_LENGTH } from '../utils/roadmapLimits'
 
-const SUPPORTED_FILE_COPY = 'PDF, DOCX, TXT, Markdown, JSON, CSV, and YAML · 8 MB maximum'
+const SUPPORTED_FILE_COPY = IS_MOBILE ? 'PDF, DOCX, TXT, Markdown, JSON, and YAML · 8 MB maximum' : 'PDF, DOCX, TXT, Markdown, JSON, CSV, and YAML · 8 MB maximum'
 const MAX_FILE_BYTES = 8 * 1024 * 1024
 const SUPPORTED_EXTENSIONS = new Set([
     'pdf', 'docx', 'txt', 'md', 'markdown', 'json', 'csv', 'yaml', 'yml', 'rst', 'log',
@@ -45,7 +45,7 @@ export default function Import() {
 
     const selectFile = (file) => {
         if (!file) return false
-        if (!isSupportedFile(file)) {
+        if (!isSupportedFile(file) || (IS_MOBILE && file.name.toLowerCase().endsWith('.csv'))) {
             setError('Unsupported file type. Choose PDF, DOCX, or a supported text document.')
             return false
         }
@@ -159,7 +159,7 @@ export default function Import() {
             navigate(`/roadmap/${res.data.id}`)
         } catch (importError) {
             console.error(importError)
-            setError(!IS_DESKTOP && importError.response?.status === 503
+            setError(!IS_NATIVE && importError.response?.status === 503
                 ? 'The online workspace is not available yet. This plan was not saved. Use the desktop app to work privately and offline.'
                 : getApiErrorMessage(importError, 'Failed to import roadmap.'))
         } finally {

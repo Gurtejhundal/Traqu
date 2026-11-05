@@ -3,7 +3,7 @@ name: Desktop builds
 on:
   workflow_dispatch:
   push:
-    branches: [main, 'codex/desktop-app']
+    branches: [main, 'codex/desktop-app', 'codex/profile-studio']
     tags: ['v*']
   pull_request:
     branches: [main]
@@ -20,6 +20,7 @@ jobs:
         include:
           - { name: Linux x64, os: ubuntu-22.04, arch: x64 }
           - { name: Windows x64, os: windows-latest, arch: x64 }
+          - { name: Windows ARM64, os: windows-11-arm, arch: arm64 }
           - { name: macOS Apple Silicon, os: macos-15, arch: arm64 }
           - { name: macOS Intel, os: macos-15-intel, arch: x64 }
     runs-on: ${{ matrix.os }}
@@ -30,13 +31,15 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+          architecture: ${{ matrix.arch }}
           cache: npm
           cache-dependency-path: |
             package-lock.json
             frontend/package-lock.json
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          architecture: ${{ matrix.arch }}
           cache: pip
           cache-dependency-path: 'backend/requirements*.txt'
       - name: Linux desktop libraries
@@ -46,6 +49,7 @@ jobs:
       - run: npm run setup
       - run: npm test
       - run: npm test --prefix frontend
+      - run: npm run test:mobile
       - run: npm run lint --prefix frontend
       - name: Backend tests
         shell: bash
@@ -57,6 +61,9 @@ jobs:
             ../.venv-desktop/bin/python -m pytest -q
           fi
       - run: npm run build
+      - name: Verify native Windows architecture
+        if: runner.os == 'Windows'
+        run: node scripts/check-windows-architecture.cjs ${{ matrix.arch }} node_modules/electron/dist/electron.exe dist/backend/traqo-backend/traqo-backend.exe
       - name: Desktop end-to-end test (Linux)
         if: runner.os == 'Linux'
         run: xvfb-run --auto-servernum npm run test:desktop
@@ -79,7 +86,7 @@ jobs:
         if: runner.os == 'Windows'
         run: npm run test:desktop
         env:
-          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/win-unpacked/Traqu.exe'
+          TRAQO_TEST_EXECUTABLE: '${{ github.workspace }}/release/${{ matrix.arch == 'arm64' && 'win-arm64-unpacked' || 'win-unpacked' }}/Traqu.exe'
       - name: Test packaged app (macOS)
         if: runner.os == 'macOS'
         run: npm run test:desktop
@@ -105,9 +112,64 @@ jobs:
           path: test-results/
           if-no-files-found: ignore
 
+  android:
+    name: Android offline preview
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            frontend/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - run: npm ci --prefix frontend
+      - run: npm run test:mobile
+      - run: npm run sync:android
+      - name: Build installable Android preview
+        working-directory: android
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --no-daemon
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Verify offline workspace on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          script: adb shell svc wifi disable; adb shell svc data disable; cd android && ./gradlew connectedDebugAndroidTest --no-daemon
+      - name: Collect Android preview
+        run: |
+          mkdir -p release
+          cp android/app/build/outputs/apk/debug/app-debug.apk release/Traqu-Android-preview.apk
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Traqu-Android-preview
+          path: release/Traqu-Android-preview.apk
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: diagnostics-Android
+          path: |
+            android/app/build/reports/
+            android/app/build/outputs/androidTest-results/
+          if-no-files-found: ignore
+
   release:
     name: Publish desktop downloads
-    needs: desktop
+    needs: [desktop, android]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-22.04
     permissions:

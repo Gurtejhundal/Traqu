@@ -3,8 +3,9 @@ import { Link, useLocation } from 'react-router-dom'
 import axios from 'axios'
 import { AlertCircle, ArrowRight, FileText, Plus, RefreshCw, Trash2, Download, Upload } from 'lucide-react'
 
-import { API_URL, LOCAL_USER_ID, IS_DESKTOP } from '../config'
+import { API_URL, LOCAL_USER_ID, IS_NATIVE, IS_MOBILE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
+import { downloadFile } from '../utils/downloadFile'
 import { Companion } from '../components/MotionUI'
 
 export default function Home() {
@@ -25,7 +26,7 @@ export default function Home() {
             setRoadmaps(Array.isArray(res.data) ? res.data : [])
         } catch (fetchError) {
             console.error('Failed to fetch roadmaps', fetchError)
-            const unavailable = !IS_DESKTOP && fetchError.response?.status === 503
+            const unavailable = !IS_NATIVE && fetchError.response?.status === 503
             setHostedUnavailable(unavailable)
             setError(unavailable ? 'The online workspace is not available yet. The desktop app keeps your plans on your computer and works offline.' : getApiErrorMessage(fetchError, 'Could not load your roadmaps. Try opening the workspace again.'))
         } finally {
@@ -58,12 +59,7 @@ export default function Home() {
         setError('')
         try {
             const { data } = await axios.get(`${API_URL}/backup`)
-            const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-            const link = document.createElement('a')
-            link.href = url
-            link.download = `Traqu-workspace-${new Date().toISOString().slice(0, 10)}.json`
-            link.click()
-            window.setTimeout(() => URL.revokeObjectURL(url), 2000)
+            await downloadFile(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `Traqu-workspace-${new Date().toISOString().slice(0, 10)}.json`)
         } catch (error) {
             setError(getApiErrorMessage(error, 'Your backup could not be saved. Try again.'))
         } finally { setBackingUp(false) }
@@ -78,7 +74,7 @@ export default function Home() {
                     <p>Plans, checklists, study schedules, and project work in one quiet place.</p>
                 </div>
                 <div className="workspace-actions">
-                    <button className="btn-quiet" onClick={backUpWorkspace} disabled={backingUp || roadmaps.length === 0}><Download size={14} />{backingUp ? 'Saving…' : 'Back up'}</button>
+                    <button className="btn-quiet" onClick={backUpWorkspace} disabled={backingUp || loading}><Download size={14} />{backingUp ? 'Saving…' : 'Back up'}</button>
                     <Link to="/import" className="btn-quiet"><Upload size={14} />Restore</Link>
                     {hostedUnavailable ? <Link to="/downloads" className="btn-primary hero-action"><Download size={16} /> Get the app</Link>
                         : <Link to="/import" className="btn-primary hero-action"><Plus size={16} /> New</Link>}
@@ -150,7 +146,8 @@ export default function Home() {
                     )}
                 </section>
             )}
-            {!IS_DESKTOP && <p className="workspace-note">This browser keeps access to your web workspace. Save a backup before clearing site data. For work saved on your computer, use the desktop app.</p>}
+            {IS_MOBILE && <p className="workspace-note">Saved on this device. Export a workspace backup before uninstalling Traqu or clearing app data.</p>}
+            {!IS_NATIVE && <p className="workspace-note">This browser keeps access to your web workspace. Save a backup before clearing site data. For work saved on your computer, use the desktop app.</p>}
         </main>
     )
 }

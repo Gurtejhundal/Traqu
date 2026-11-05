@@ -1,0 +1,7 @@
+{
+  "appId": "io.github.gurtejhundal.traqu",
+  "appName": "Traqu",
+  "webDir": "frontend/dist",
+  "server": { "androidScheme": "https" },
+  "android": { "allowMixedContent": false, "captureInput": true, "backgroundColor": "#ffffff" }
+}

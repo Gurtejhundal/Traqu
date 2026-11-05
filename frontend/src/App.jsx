@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import './index.css'
-import { IS_DESKTOP } from './config'
+import { IS_NATIVE } from './config'
 import { MotionProvider, RouteTransition } from './components/MotionUI'
 import { WorkspacePreferences } from './components/WorkspacePreferences'
 
@@ -11,8 +11,8 @@ const RoadmapView = lazy(() => import('./pages/RoadmapView'))
 const Import = lazy(() => import('./pages/Import'))
 const Edit = lazy(() => import('./pages/Edit'))
 const Profile = lazy(() => import('./pages/Profile'))
-const Agents = !IS_DESKTOP ? lazy(() => import('./pages/Agents')) : null
-const Downloads = !IS_DESKTOP ? lazy(() => import('./pages/Downloads')) : null
+const Agents = !IS_NATIVE ? lazy(() => import('./pages/Agents')) : null
+const Downloads = !IS_NATIVE ? lazy(() => import('./pages/Downloads')) : null
 
 function AppRoutes() {
     const location = useLocation()
@@ -26,8 +26,8 @@ function AppRoutes() {
                 <Route path="/roadmap/:id" element={<RoadmapView />} />
                 <Route path="/edit/:id" element={<Edit />} />
                 <Route path="/profile" element={<Profile />} />
-                {!IS_DESKTOP && <Route path="/agents" element={<Agents />} />}
-                {!IS_DESKTOP && <Route path="/downloads" element={<Downloads />} />}
+                {!IS_NATIVE && <Route path="/agents" element={<Agents />} />}
+                {!IS_NATIVE && <Route path="/downloads" element={<Downloads />} />}
                 <Route path="*" element={<Navigate to="/" replace />} />
                </Routes>
               </RouteTransition>

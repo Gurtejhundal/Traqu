@@ -36,6 +36,8 @@ The study plan is in a PDF. The project roadmap is in a chat. The next step is s
 | Your computer | Direct download |
 | --- | --- |
 | <img src="frontend/public/os/windows.svg" width="16" height="16" alt=""> **Windows x64** | [Setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-x64.exe) |
+| <img src="frontend/public/os/windows.svg" width="16" height="16" alt=""> **Windows ARM64** | [ARM64 setup .exe](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Windows-arm64.exe) |
+| **Android preview** | [Preview APK](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Android-preview.apk) · [scope and build instructions](docs/ANDROID.md) |
 | <img src="frontend/public/os/linux.svg" width="16" height="16" alt=""> **Linux x64** | [AppImage](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.AppImage) · [Debian / Ubuntu .deb](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-Linux-x64.deb) |
 | <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Apple Silicon** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-arm64.zip) |
 | <img src="frontend/public/os/apple.svg" width="16" height="16" alt=""> **Mac · Intel** | [DMG](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.dmg) · [ZIP](https://github.com/Gurtejhundal/Traqu/releases/latest/download/Traqu-macOS-x64.zip) |
@@ -46,7 +48,7 @@ Download directly: no Actions artifact ZIP or GitHub sign-in required. Releases 
 
 **Install:** run the Windows setup; on Mac, open the DMG and drag Traqu to Applications; on Debian/Ubuntu install the DEB with your package manager. For AppImage, enable execution in file properties (or `chmod +x Traqu-Linux-x64.AppImage`) and open it. AppImage may need FUSE 2 from your distribution.
 
-The desktop app includes its Python engine and interface, works offline, and saves to your computer. Baselines: Windows 10/11 x64, macOS 13+ (Intel or Apple Silicon), and Linux x64 builds made on Ubuntu 22.04. Linux/Windows ARM installers are not available yet.
+The desktop app includes its Python engine and interface, works offline, and saves to your computer. Baselines: Windows 10/11 x64, Windows 11 ARM64, macOS 13+ (Intel or Apple Silicon), and Linux x64 builds made on Ubuntu 22.04. Windows ARM64 includes a native ARM64 backend. Linux ARM builds are not provided. Android is an offline preview with a separate on-device workspace; see its documented limits before installing.
 
 Builds are **unsigned**: Windows may show SmartScreen and macOS may require approval under System Settings → Privacy & Security. Signing and Apple notarization are not configured. See [Electron platform support](https://github.com/electron/electron#platform-support) and the [macOS 13 minimum introduced in Electron 44](https://www.electronjs.org/blog/electron-44-0).
 
@@ -68,7 +70,11 @@ Dated daily planners now keep individual time slots, weekly context, durations, 
 
 **Your corner of Traqu** keeps your name, bio, goal, timezone, week start, task spacing, and motion preferences together. A GitHub-style contribution calendar records real completions; select a date to see that day’s work, or replay the snake’s path through your activity.
 
-<img src="docs/screenshots/profile.png" alt="Traqu profile with goal, current and longest streaks, yearly contribution calendar, and snake replay" width="1080">
+<img src="docs/screenshots/profile-personalize.png" alt="Traqu profile studio with photo upload, crop, monochrome treatment, paper/stone/ink covers, a personal return ritual, and activity shade choices" width="1080">
+
+<img src="docs/screenshots/profile-card.png" alt="Actual exported Traqu profile card with Qu, a profile photo, a seven-day activity target and recorded streak statistics" width="800">
+
+**Your corner, your way.** Overview, Personalize and Preferences keep your profile easy to navigate. Add and crop a photo, choose a cover and activity shades, set a personal seven-day target and leave a note for the days you need a little momentum. Preview a high-resolution profile card with your photo, Qu and real progress; choose its finish, headline and visible details, then save it or share it with a friend. [Profile audit and update](docs/PROFILE_UPDATE.md).
 
 History starts with completions recorded in this version. Imported checkmarks do not fabricate past activity. Same-day undo removes the task’s credit; reopening later keeps the earlier record. Workspace backups include profile and history; restoring keeps an existing profile and merges history by event identity.
 

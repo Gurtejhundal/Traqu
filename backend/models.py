@@ -46,6 +46,36 @@ class ProfileUpdate(BaseModel):
     compact: bool = False
     pet_motion: bool = True
     reduced_motion: bool = False
+    avatar: str = Field(default='', max_length=350000)
+    avatar_shape: str = Field(default='circle', pattern='^(circle|rounded)$')
+    avatar_monochrome: bool = True
+    cover: str = Field(default='paper', pattern='^(paper|stone|ink)$')
+    calendar_palette: str = Field(default='graphite', pattern='^(graphite|sage|slate)$')
+    weekly_goal: int = Field(default=5, ge=1, le=7)
+    return_note: str = Field(default='', max_length=160)
+
+    @field_validator('avatar')
+    @classmethod
+    def safe_avatar(cls, value):
+        if not value:
+            return value
+        import base64
+        from io import BytesIO
+        from PIL import Image
+        try:
+            header, encoded = value.split(',', 1)
+            if header not in {'data:image/jpeg;base64', 'data:image/png;base64', 'data:image/webp;base64'}:
+                raise ValueError('Unsupported photo format.')
+            raw = base64.b64decode(encoded, validate=True)
+            if len(raw) > 250000:
+                raise ValueError('Photo is too large.')
+            with Image.open(BytesIO(raw)) as image:
+                if image.format not in {'JPEG', 'PNG', 'WEBP'} or not (1 <= image.width <= 1024 and 1 <= image.height <= 1024):
+                    raise ValueError('Invalid photo size or format.')
+                image.verify()
+        except Exception as exc:
+            raise ValueError('Choose a valid PNG, JPEG or WebP photo, at most 1024 pixels and 250 KB.') from exc
+        return value
 
     @field_validator('name')
     @classmethod

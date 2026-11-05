@@ -8,7 +8,9 @@ from database import SessionLocal
 import models_db as models
 
 DEFAULT_PROFILE = {'name': 'Your workspace', 'bio': '', 'goal': '', 'timezone': '',
-                   'week_start': 'monday', 'compact': False, 'pet_motion': True, 'reduced_motion': False}
+                   'week_start': 'monday', 'compact': False, 'pet_motion': True, 'reduced_motion': False,
+                   'avatar': '', 'avatar_shape': 'circle', 'avatar_monochrome': True, 'cover': 'paper',
+                   'calendar_palette': 'graphite', 'weekly_goal': 5, 'return_note': ''}
 
 
 def zone(value):
@@ -91,6 +93,9 @@ def summary(user_id, tz='UTC', year=None):
                 'longest_streak': longest, 'active_days': len(counts),
                 'total_completions': sum(counts.values()),
                 'days': [{'date': day, 'count': count} for day, count in counts.items() if day.startswith(str(year))],
+                'recent_days': [{'date': (today - timedelta(days=offset)).isoformat(),
+                                 'count': counts.get((today - timedelta(days=offset)).isoformat(), 0)}
+                                for offset in range(6, -1, -1)],
                 'started_at': min(counts) if counts else None}
 
 

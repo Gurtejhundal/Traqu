@@ -151,7 +151,7 @@ def test_timezone_boundaries_reopening_on_later_day_and_streaks(monkeypatch):
 
 def test_profile_backup_and_history_restore_are_owner_scoped_additive_and_idempotent():
     headers = owner()
-    settings = {'name': 'My local profile', 'bio': 'Learning daily', 'goal': 'One step', 'timezone': 'Asia/Kolkata', 'week_start': 'sunday', 'compact': True, 'pet_motion': False, 'reduced_motion': True}
+    settings = {**activity.DEFAULT_PROFILE, 'name': 'My local profile', 'bio': 'Learning daily', 'goal': 'One step', 'timezone': 'Asia/Kolkata', 'week_start': 'sunday', 'compact': True, 'pet_motion': False, 'reduced_motion': True}
     assert client.put('/profile', headers=headers, json=settings).json() == settings
     assert client.get('/profile', headers=owner()).json()['name'] != settings['name']
     assert client.put('/profile', headers=headers, json={**settings, 'timezone': 'bad/zone'}).status_code == 400

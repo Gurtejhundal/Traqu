@@ -1,6 +1,6 @@
 {
   "name": "traqu-desktop",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
   "repository": {
@@ -27,12 +27,19 @@
     "test:desktop": "playwright test",
     "build": "npm run build:frontend && npm run build:backend",
     "dist": "npm run build && electron-builder --publish never",
-    "pack": "npm run build && electron-builder --dir --publish never"
+    "pack": "npm run build && electron-builder --dir --publish never",
+    "build:mobile": "node scripts/build-mobile.cjs",
+    "sync:android": "npm run build:mobile && cap sync android",
+    "test:mobile": "node --test frontend/src/mobile/*.test.js"
   },
   "devDependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/cli": "8.6.0",
+    "@capacitor/core": "8.6.0",
     "@playwright/test": "1.64.1",
     "electron": "45.2.1",
-    "electron-builder": "26.18.0"
+    "electron-builder": "26.18.0",
+    "fake-indexeddb": "6.2.7"
   },
   "build": {
     "appId": "io.github.gurtejhundal.traqo",

@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Plus, Library, Sparkles, ArrowDownToLine, UserRound } from 'lucide-react'
 import TraquLogo from './TraquLogo'
-import { IS_DESKTOP } from '../config'
+import { IS_NATIVE, IS_MOBILE } from '../config'
 import { Companion } from './MotionUI'
 
 export default function Navbar() {
@@ -10,14 +10,14 @@ export default function Navbar() {
         { path: '/', label: 'Library', icon: Library },
         { path: '/import', label: 'New', icon: Plus },
         { path: '/profile', label: 'Profile', icon: UserRound },
-        ...(!IS_DESKTOP ? [
+        ...(!IS_NATIVE ? [
             { path: '/agents', label: 'Agent guide', icon: Sparkles },
             { path: '/downloads', label: 'Downloads', icon: ArrowDownToLine },
         ] : []),
     ]
 
     return (
-        <header className={`navbar-custom ${IS_DESKTOP ? 'desktop-navbar' : ''}`}>
+        <header className={`navbar-custom ${IS_NATIVE ? 'desktop-navbar' : ''}`}>
             <div className="navbar-inner">
                 <Link to="/" className="brand-lockup" aria-label="Traqu home">
                     <TraquLogo className="brand-mark" />
@@ -51,7 +51,7 @@ export default function Navbar() {
 
                 <div className="navbar-status">
                     {/\/(?:roadmap|edit)\//.test(location.pathname) && <Companion size={48} className="qu-mini" />}
-                    <span className="local-status"><i aria-hidden="true" /> {IS_DESKTOP ? 'Local' : 'Web'}</span>
+                    <span className="local-status"><i aria-hidden="true" /> {IS_MOBILE ? 'On device' : IS_NATIVE ? 'Local' : 'Web'}</span>
                 </div>
             </div>
         </header>

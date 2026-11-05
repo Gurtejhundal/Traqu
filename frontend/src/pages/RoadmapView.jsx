@@ -1,3 +1,4 @@
+import { downloadFile } from '../utils/downloadFile'
 import { useCallback, useDeferredValue, useMemo, useState, useEffect, useRef } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import axios from 'axios'
@@ -709,12 +710,7 @@ export default function RoadmapView() {
         setActionError('')
         try {
             const { data } = await axios.get(`${API_URL}/roadmaps/${id}/export`, { headers: authHeaders })
-            const url = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
-            const link = document.createElement('a')
-            link.href = url
-            link.download = `${roadmap.name.replace(/[^\p{L}\p{N}._-]/gu, '_')}.json`
-            link.click()
-            window.setTimeout(() => URL.revokeObjectURL(url), 2000)
+            await downloadFile(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }), `${roadmap.name.replace(/[^\p{L}\p{N}._-]/gu, '_')}.json`)
         } catch (error) {
             console.error(error)
             setActionError('The JSON backup could not be saved. Try again.')
@@ -742,10 +738,7 @@ export default function RoadmapView() {
         setIsExportMenuOpen(false)
         setActionError('')
         try {
-            const [{ Document, Packer, Paragraph, HeadingLevel }, { saveAs }] = await Promise.all([
-                import('docx'),
-                import('file-saver'),
-            ])
+            const { Document, Packer, Paragraph, HeadingLevel } = await import('docx')
             const children = [
                 new Paragraph({
                     text: roadmap.name,
@@ -836,7 +829,7 @@ export default function RoadmapView() {
             })
 
             const blob = await Packer.toBlob(doc)
-            saveAs(blob, `${roadmap.name.replace(/\s+/g, '_')}.docx`)
+            await downloadFile(blob, `${roadmap.name.replace(/\s+/g, '_')}.docx`)
         } catch (err) {
             console.error('Word Export failed', err)
             setActionError('The Word document could not be generated. No file was saved.')
