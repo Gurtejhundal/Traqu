@@ -114,10 +114,13 @@ def _ensure_monotonic_sqlite_ids():
             ddl = str(CreateTable(table).compile(dialect=engine.dialect))
             ddl = ddl.replace(f"CREATE TABLE {table.name}", f"CREATE TABLE {temporary_name}", 1)
             cursor.execute(ddl)
-            columns = ', '.join(f'"{column.name}"' for column in table.columns)
-            cursor.execute(f'INSERT INTO "{temporary_name}" ({columns}) SELECT {columns} FROM "{table.name}"')
-            cursor.execute(f'DROP TABLE "{table.name}"')
-            cursor.execute(f'ALTER TABLE "{temporary_name}" RENAME TO "{table.name}"')
+            escape_ident = lambda name: f'"{str(name).replace(chr(34), chr(34)*2)}"'
+            columns = ', '.join(escape_ident(column.name) for column in table.columns)
+            safe_temp = escape_ident(temporary_name)
+            safe_table = escape_ident(table.name)
+            cursor.execute(f'INSERT INTO {safe_temp} ({columns}) SELECT {columns} FROM {safe_table}')
+            cursor.execute(f'DROP TABLE {safe_table}')
+            cursor.execute(f'ALTER TABLE {safe_temp} RENAME TO {safe_table}')
             for index in table.indexes:
                 cursor.execute(str(CreateIndex(index).compile(dialect=engine.dialect)))
         if cursor.execute("PRAGMA foreign_key_check").fetchone():
