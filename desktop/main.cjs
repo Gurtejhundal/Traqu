@@ -108,16 +108,22 @@ async function launch() {
   log.on('error', () => {});
   log.write(`\n${new Date().toISOString()} Traqu ${app.getVersion()} ${process.platform}/${process.arch}\n`);
   menu();
-  ipcMain.handle('traqu:connect-codex', async (event, allowWrite) => {
+  ipcMain.handle('traqu:ai-connection', async (event, payload) => {
     if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
         || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
-    if (typeof allowWrite !== 'boolean') throw new Error('Choose a connection access mode.');
+    const { CLIENTS, configForClient, connectClient } = require('./mcp.cjs');
+    if (!payload || !Object.hasOwn(CLIENTS, payload.client) || typeof payload.allowWrite !== 'boolean'
+        || !['connect', 'config'].includes(payload.action)) throw new Error('Choose a supported AI app and access mode.');
+    const options = { packaged: app.isPackaged, resourcesPath: process.resourcesPath, root,
+      dataDir: app.getPath('userData'), appData: app.getPath('appData'), allowWrite: payload.allowWrite };
+    if (payload.action === 'config') return { config: { mcpServers: { traqu: configForClient(options, payload.client) } } };
+    const name = CLIENTS[payload.client];
     const confirmation = await dialog.showMessageBox(window, { type: 'question',
-      message: 'Connect Traqu to Codex?',
-      detail: `${allowWrite ? 'Codex can read and edit your local roadmaps and tasks.' : 'Codex can read your local roadmaps and tasks.'}\nThis adds a connection to Codex settings and backs up the previous settings. Restart Codex afterward.`,
-      buttons: ['Cancel', 'Connect'], defaultId: 0, cancelId: 0 });
+      message: `Set up Traqu for ${name}?`,
+      detail: `${payload.allowWrite ? `${name} can read and edit your local roadmaps and tasks.` : `${name} can read your local roadmaps and tasks.`}\nThis adds a connection to its settings and backs up previous settings. Restart ${name} afterward. Your AI app must be installed and signed in separately.`,
+      buttons: ['Cancel', 'Set up'], defaultId: 0, cancelId: 0 });
     if (confirmation.response !== 1) return { canceled: true };
-    return require('./mcp.cjs').connectCodex({ packaged: app.isPackaged, resourcesPath: process.resourcesPath, root, dataDir: app.getPath('userData'), allowWrite });
+    return connectClient(options, payload.client);
   });
   ipcMain.handle('traqu:save-pdf', async (event, payload) => {
     if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent

@@ -25,5 +25,25 @@ test('photo saves immediately without saving unrelated edits and save controls s
     expect(await page.locator('.profile-savebar').evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('.profile-section-heading')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
     await page.getByRole('button',{name:'Preferences',exact:true}).click();
     await expect(page.getByRole('button',{name:'Connect to Codex',exact:true})).toBeVisible();
+    for (const client of ['claude-desktop','claude-code','gemini-cli','antigravity','cursor','codex']) {
+      await page.getByLabel('Your AI app', {exact:true}).selectOption(client);
+      await page.getByRole('button', {name:'Copy configuration',exact:true}).click();
+      const config=JSON.parse(await page.getByLabel('AI connection text').inputValue());
+      expect(config.mcpServers.traqu.command).toBeTruthy();
+      expect(config.mcpServers.traqu.args).toContain('--data-dir');
+      expect(config.mcpServers.traqu.args).not.toContain('--allow-write');
+      expect(config.mcpServers.traqu.type).toBe(client === 'claude-code' ? 'stdio' : undefined);
+    }
+    await page.getByRole('button',{name:'Copy chat prompt',exact:true}).click();
+    expect(await page.getByLabel('AI connection text').inputValue()).toContain('Week 1');
+    const rid=await page.evaluate(async()=> (await (await fetch('/api/roadmaps',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Shared day plan',text:'# Week 1: Arrays\n## Day 1 · 2026-11-11\n- [ ] Practice vectors'})})).json()).id);
+    await page.reload();
+    await page.getByRole('button',{name:'Preferences',exact:true}).click();
+    await page.getByLabel('Include a roadmap', {exact:true}).selectOption(String(rid));
+    await page.getByRole('button',{name:'Copy chat prompt',exact:true}).click();
+    await expect.poll(async()=>await page.getByLabel('AI connection text').inputValue()).toContain('Practice vectors');
+    const prompt=await page.getByLabel('AI connection text').inputValue();
+    expect(prompt).toContain('2026-11-11'); expect(prompt).not.toContain('Unsaved identity');
+
   } finally { await app.close(); fs.rmSync(folder,{recursive:true,force:true}); }
 });

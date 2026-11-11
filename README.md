@@ -40,7 +40,7 @@ Pick your device. Bring a plan. Start with Day 1.
     <td width="50%" valign="top">
       <h3><img src="frontend/public/os/android.svg" width="24" height="24" alt=""> &nbsp; Android</h3>
       <p>Your daily plans, progress and little companion. Right on your phone.</p>
-      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/download/android-v1.6.0/Traqu-Android.apk"><b>↓ Download APK</b></a></p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/download/android-v1.6.1/Traqu-Android.apk"><b>↓ Download APK</b></a></p>
       <sub>Android 7 or newer</sub>
     </td>
     <td width="50%" valign="top">
@@ -98,9 +98,11 @@ Dated daily planners now keep individual time slots, weekly context, durations, 
 
 Traqu has a local **MCP server** for reading roadmaps, dated days, tasks and real activity from your desktop workspace. Enable editing explicitly to create plans, add notes and update checkboxes through the same validation as the app. It runs over stdio, with no public endpoint or cloud database.
 
-In desktop version **1.6.0+**, open **Profile → Preferences → AI connections → Connect to Codex**. Choose read-only or editing access, confirm, then restart Codex. The server is bundled: no Python, Node.js or terminal setup is needed.
+In desktop version **1.6.1+**, open **Profile → Preferences → AI connections** and choose **Codex, Claude Desktop, Claude Code, Gemini CLI, Antigravity or Cursor**. Choose read-only or editing access, confirm setup, then restart your AI app. The server is bundled: no Python, Node.js or terminal setup is needed.
 
-[Codex setup, source installation, available tools and access modes](docs/MCP.md).
+For free ChatGPT, Claude or Gemini browser chats, **Copy chat prompt** provides the full Traqu format and optionally one chosen roadmap. Paste it into your chat and import the result. This is a manual copy/import workflow, not live synchronization.
+
+[Client setup, source installation, available tools and access modes](docs/MCP.md).
 
 ## One day at a time
 

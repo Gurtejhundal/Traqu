@@ -5,6 +5,7 @@ import ActivityCalendar from '../components/ActivityCalendar'
 import { Companion } from '../components/MotionUI'
 import { useWorkspace } from '../components/WorkspacePreferences'
 import ProfileCard from '../components/ProfileCard'
+import AIConnections from '../components/AIConnections'
 import { API_URL, IS_NATIVE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { drawCrop, preparePhoto } from '../utils/profile'
@@ -29,9 +30,6 @@ export default function Profile() {
     const [crop, setCrop] = useState({ zoom: 1, x: 50, y: 50 })
     const [summary, setSummary] = useState(null)
     const [cardOpen, setCardOpen] = useState(false)
-    const [connection, setConnection] = useState('')
-    const [connecting, setConnecting] = useState(false)
-    const [allowWrite, setAllowWrite] = useState(false)
     const previousProfile = useRef(profile)
     const fileInput = useRef(null)
     const cropCanvas = useRef(null)
@@ -82,14 +80,6 @@ export default function Profile() {
         finally { setSaving(false) }
     }
     function usePhoto() { return persistAvatar(cropCanvas.current.toDataURL('image/jpeg', .88)) }
-    async function connectCodex() {
-        setConnecting(true); setConnection('')
-        try {
-            const result = await window.traquDesktop.connectCodex(allowWrite)
-            setConnection(result.canceled ? 'Connection canceled.' : `Connected with ${result.readOnly ? 'read-only' : 'editing'} access. Restart Codex to load Traqu.`)
-        } catch (err) { setConnection(err.message || 'Could not connect. Please try again.') }
-        finally { setConnecting(false) }
-    }
     async function save(event) {
         event.preventDefault()
         if (saving || photo || reading) return
@@ -138,7 +128,7 @@ export default function Profile() {
             <fieldset disabled={locked} hidden={view !== 'preferences'} className="profile-editor-fields">
                 <div className="profile-section-heading"><span className="eyebrow">Preferences</span><h2>Find your rhythm.</h2><p>A few small adjustments for the way you work.</p></div>
                 <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your calendar</h3><div className="profile-field-grid"><label className="profile-field-wide">Timezone<input value={draft.timezone} onChange={event => change('timezone', event.target.value)} list="profile-timezones" placeholder="Use this device’s timezone" /><datalist id="profile-timezones">{['Asia/Kolkata', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Singapore', 'Australia/Sydney'].map(zone => <option key={zone}>{zone}</option>)}</datalist><small>Past activity keeps its original day.</small></label><label className="profile-field-wide">Start the week on<select value={draft.week_start} onChange={event => change('week_start', event.target.value)}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></label></div></section><section className="profile-editor-panel"><h3>Comfort & companion</h3><div className="profile-toggles">{toggles.map(([key, title, copy]) => <label key={key}><span><strong>{title}</strong><small>{copy}</small></span><input type="checkbox" checked={draft[key]} onChange={event => change(key, event.target.checked)} /></label>)}</div></section></div>
-                {window.traquDesktop?.connectCodex && <section className="profile-editor-panel ai-connection"><span className="eyebrow">AI connections</span><h3>Bring your plan to Codex.</h3><p>Connect your local workspace. No Python, terminal or account key needed. Information you share with Codex follows its data settings.</p><label className="profile-inline-toggle"><span>Allow Codex to edit roadmaps and tasks</span><input type="checkbox" checked={allowWrite} onChange={event => setAllowWrite(event.target.checked)} /></label><button type="button" className="btn-secondary" disabled={connecting} onClick={connectCodex}>{connecting ? 'Connecting…' : 'Connect to Codex'}</button><p role="status">{connection || 'Read-only by default. Restart Codex after connecting.'}</p></section>}
+                <AIConnections />
                 <p className="profile-privacy"><ShieldCheck size={16} />{IS_NATIVE ? 'Your profile photo, preferences and history stay in your local workspace and workspace backups.' : 'Your profile photo and preferences are saved with your workspace and its backups.'}</p>
             </fieldset>
 

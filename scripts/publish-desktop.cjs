@@ -17,7 +17,7 @@ const checksums = expected.map(name => `${crypto.createHash('sha256').update(fs.
 fs.writeFileSync(path.join(directory, 'SHA256SUMS.txt'), checksums);
 const notes = `Traqu ${version}
 
-New in 1.6: bundled local MCP with Profile → Preferences → AI connections for Codex; no separate Python or Node installation. Read-only by default, optional editing access and a native confirmation. Photos save immediately when applied; other profile save controls appear above the form. Corrected Android launcher artwork and adaptive-icon padding.
+New in 1.6.1: setup for Codex, Claude Desktop, Claude Code, Gemini CLI, Antigravity and Cursor. Copy configuration for other local MCP clients; copy a self-contained roadmap prompt (optionally including a chosen plan) for browser chats, including free plans. Browser copy/import is manual and does not enable live sync or bypass provider limits.\n\nBundled local MCP with Profile → Preferences → AI connections for Codex; no separate Python or Node installation. Read-only by default, optional editing access and a native confirmation. Photos save immediately when applied; other profile save controls appear above the form. Corrected Android launcher artwork and adaptive-icon padding.
 
 Profile studio: photo upload with crop and black-and-white treatment; paper, stone and ink covers; photo shapes and activity shades; a personal seven-day rhythm target and return note. Separate Overview, Personalize and Preferences views, live previews, explicit save/discard, keyboard calendar navigation and a 2400 × 1520 profile card with your photo, Qu and real activity; choose its style and visible details, save it or open a native share sheet. Profile photos and preferences are included in workspace backups.
 

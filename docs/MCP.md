@@ -4,11 +4,34 @@ Let a local MCP client work with your desktop roadmaps. The server runs over **s
 
 The server uses the same SQLite workspace and API validation as the desktop app. It does not connect to the website or Android storage. Only the local desktop owner is exposed. Desktop installers from version 1.6.0 bundle the MCP runtime. Older installers require the source setup below.
 
-## Connect from the installed desktop app (1.6.0+)
+## Connect from the installed desktop app
 
-Open **Profile → Preferences → AI connections**, choose read-only or editing access, and click **Connect to Codex**. Confirm the native dialog and restart Codex. No Python, Node.js or terminal is required. Traqu backs up Codex settings before adding its managed connection and preserves other settings. An existing manually configured `traqu` connection must first be removed in Codex settings to avoid silently replacing it. You can change access later by connecting again.
+In **1.6.1+**, open **Profile → Preferences → AI connections**, choose your AI app and read-only or editing access, then click **Connect**. Confirm the native dialog and restart the selected app. No Python, Node.js or terminal is required. Your AI app must be installed and authenticated separately. Setup adds configuration; it cannot verify model access, subscriptions or tool permissions inside another app. Version 1.6.0 offers Codex only.
 
-The bundled server works when the Traqu window is closed. Keep the application installed at the same location; reconnect after moving or reinstalling it. This is a desktop feature, not an Android or website connection. Uninstalling Traqu does not remove the Codex entry; remove it in Codex MCP settings.
+| Client | Settings used by automatic setup |
+| --- | --- |
+| Codex | `$CODEX_HOME/config.toml` or `~/.codex/config.toml` |
+| Claude Desktop | macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`; Windows: `%APPDATA%/Claude/claude_desktop_config.json` |
+| Claude Code | `~/.claude.json`, user-level `mcpServers`; project entries preserved |
+| Gemini CLI | `~/.gemini/settings.json` |
+| Antigravity | `~/.gemini/config/mcp_config.json` |
+| Cursor | `~/.cursor/mcp.json` |
+
+Claude Desktop on Linux, custom configuration locations, files with comments, and other MCP clients should use **Copy configuration** and merge its `traqu` entry in their app's MCP settings. For Claude Code the copied entry includes `type: "stdio"`. JSON copy output is not a replacement for Codex's TOML file: use Codex automatic setup or the CLI command below.
+
+Traqu backs up existing settings and preserves other servers and preferences. JSON clients allow updating the same executable/workspace's Traqu entry; conflicting entries are left unchanged. Codex uses a marked managed block and refuses to overwrite manually configured entries. A client may need you to enable the server or approve its tools after restart. Organization policies can restrict access.
+
+The bundled server works when the Traqu window is closed. Keep the application installed at the same location; reconnect after moving or reinstalling it. This is a desktop feature, not an Android or website live connection. Uninstalling Traqu does not remove client configuration; remove its entry in your AI app's MCP settings.
+
+### Free ChatGPT, Claude and Gemini browser chats
+
+Use **Copy chat prompt** in the same section. It embeds the complete roadmap format, without requiring the chat to browse a skill URL. Optionally include one selected roadmap's day sections, dates, real completion flags, task properties and attached context. Profile information, photos and global activity history are excluded. Review the selectable text before sharing. The selected roadmap may contain sensitive notes.
+
+Paste the prompt into your chat, add your goal, dates and daily time budget, and import the generated JSON or Markdown into Traqu. This creates a new plan, not an update or automatic synchronization. Copying instructions does not require a paid AI subscription, but the provider's message limits, file features and model availability still apply. Large plans can be exported from their workspace and attached instead of pasted.
+
+A browser chat cannot start the local stdio server. ChatGPT's documented custom-MCP path requires a reachable remote endpoint or Secure MCP Tunnel, with account-dependent availability. Gemini's Connected Apps path involves a deployed remote service and registration. Claude's remote connectors are also a separate mechanism from local Claude Desktop MCP. This release does not deploy any of those cloud bridges or expose your SQLite workspace publicly.
+
+Official setup references (checked November 11, 2026): [OpenAI MCP](https://developers.openai.com/codex/mcp), [ChatGPT connections](https://developers.openai.com/plugins/deploy/connect-chatgpt), [Claude Desktop](https://support.claude.com/en/articles/10949351-getting-started-with-local-mcp-servers-on-claude-desktop), [Claude Code](https://code.claude.com/docs/en/mcp), [Gemini CLI](https://geminicli.com/docs/tools/mcp-server/), [Antigravity](https://antigravity.google/docs/mcp), [Cursor](https://cursor.com/docs/mcp), [Gemini Connected Apps](https://developers.google.com/connected-apps/mcp).
 
 ## Install from source
 

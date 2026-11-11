@@ -6,7 +6,8 @@ on:
     branches: [main]
     paths:
       - 'android/**'
-      - 'frontend/src/mobile/**'
+      - 'frontend/src/**'
+      - 'frontend/public/**'
       - 'scripts/build-mobile.cjs'
       - 'capacitor.config.json'
       - '.github/workflows/android.yml'

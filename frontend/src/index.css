@@ -3278,3 +3278,10 @@ html[data-traqu-mobile=true] .profile-savebar { bottom:calc(8px + env(safe-area-
 .profile-studio .profile-savebar { top:72px; bottom:auto; margin:0 0 24px; position:sticky; z-index:5; }
 .ai-connection { margin-top:28px; }
 .ai-connection p { color:var(--text-secondary); font-size:13px; line-height:1.65; }
+.ai-client-label { display:grid; gap:8px; margin:18px 0; font-size:12px; font-weight:600; }
+.ai-client-label select { width:100%; min-height:42px; background:var(--canvas); color:var(--text-primary); border:1px solid var(--border); border-radius:7px; padding:9px 11px; }
+.ai-actions { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.ai-copy-preview { margin-top:14px; font-size:12px; }
+.ai-copy-preview summary { cursor:pointer; padding:10px 0; }
+.ai-copy-preview textarea { width:100%; margin-top:8px; padding:12px; border:1px solid var(--border); background:var(--canvas); color:var(--text-primary); border-radius:8px; font:11px/1.6 monospace; resize:vertical; }
+.ai-connection > [role=status] { min-height:22px; }

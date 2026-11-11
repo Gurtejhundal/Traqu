@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('traquDesktop', Object.freeze({
-  connectCodex: allowWrite => ipcRenderer.invoke('traqu:connect-codex', allowWrite),
+  aiConnection: payload => ipcRenderer.invoke('traqu:ai-connection', payload),
   savePDF: document => ipcRenderer.invoke('traqu:save-pdf', document),
 }));

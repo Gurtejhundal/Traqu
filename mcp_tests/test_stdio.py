@@ -1,5 +1,5 @@
 """Exercise the actual SDK over stdio with a disposable workspace, never real data."""
-from contextlib import asynccontextmanager
+from contextlib import asynccontextmanager, closing
 from pathlib import Path
 import hashlib
 import json
@@ -72,7 +72,7 @@ class StdioIntegration(unittest.IsolatedAsyncioTestCase):
                 self.assertTrue(added['id'])
                 self.assertTrue((await client.call_tool('list_tasks', {'roadmap_id': rid, 'limit': 101})).is_error)
             path = directory / 'roadmap.db'
-            with sqlite3.connect(path) as database:
+            with closing(sqlite3.connect(path)) as database, database:
                 database.execute("INSERT INTO roadmaps(user_id,name,raw_text,document_json,revision,created_at) VALUES('another-owner','Private other workspace','','[]',1,'2026-11-11')")
             before = hashlib.sha256(path.read_bytes()).digest()
             async with connect(directory, launcher=True) as client:
