@@ -42,7 +42,7 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
   const errors = [];
 
   async function launch() {
-    const env = { ...process.env, TRAQO_DATA_DIR: dataDir };
+    const env = { ...process.env, TRAQU_BACKUP_DIR: path.join(dataDir, '..', path.basename(dataDir) + '-backups'), TRAQO_DATA_DIR: dataDir };
     // Remove this variable entirely: an empty Windows environment entry can
     // still select Electron's Node mode instead of starting a desktop process.
     delete env.ELECTRON_RUN_AS_NODE;
@@ -224,7 +224,7 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
   const profile = mkdtempSync(path.join(os.tmpdir(), 'traqu-review-e2e-'));
   let application;
   try {
-    const env = { ...process.env, TRAQO_DATA_DIR: profile };
+    const env = { ...process.env, TRAQU_BACKUP_DIR: path.join(profile, '..', path.basename(profile) + '-backups'), TRAQO_DATA_DIR: profile };
     delete env.ELECTRON_RUN_AS_NODE;
     application = await electron.launch({ executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'),
       args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });

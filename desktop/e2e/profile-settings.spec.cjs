@@ -4,7 +4,7 @@ const os = require('node:os');
 const path = require('node:path');
 test('photo saves immediately without saving unrelated edits and save controls stay above fields', async () => {
   const folder = fs.mkdtempSync(path.join(os.tmpdir(),'traqu-photo-'));
-  const env = {...process.env, TRAQO_DATA_DIR:folder}; delete env.ELECTRON_RUN_AS_NODE;
+  const env = {...process.env, TRAQU_BACKUP_DIR:path.join(folder,'..',path.basename(folder)+'-backups'),TRAQO_DATA_DIR:folder}; delete env.ELECTRON_RUN_AS_NODE;
   const app = await electron.launch({executablePath:process.env.TRAQO_TEST_EXECUTABLE || require('electron'),args:[...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [path.resolve(__dirname,'../..')])],env});
   try {
     const page=await app.firstWindow();

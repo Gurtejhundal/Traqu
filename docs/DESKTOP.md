@@ -145,3 +145,27 @@ Qu is Traqu’s original paper companion. Short route transitions and press feed
 ## Interactive companion and import skill
 
 Qu is a small monochrome companion, with pointer/keyboard reactions and quiet rests. See [character controls](CHARACTER.md). The Import screen includes an expandable AI agent skill directly below Upload file / Paste text. Copy the full instructions or download SKILL.md; both work offline, without adding a desktop navigation section.
+
+## Recovery backups and updates (1.7+)
+
+The app still saves its working database locally. In addition, it writes portable **workspace JSON recovery copies** to your operating system's Documents folder under **Traqu Backups**. This folder is separate from the installer and application data. It contains plans, task completion, notes, profile customization and recorded activity.
+
+Library and Profile → Preferences expose **Save backup now**, **Restore backup**, **Change folder**, **Open folder**, and **Check for updates**. Pick a folder outside Traqu's data folder, and keep it when uninstalling. Up to 20 changed versions plus `Traqu-workspace-latest.json` are kept. An empty library on a fresh installation does not overwrite the last non-empty latest backup.
+
+Desktop saves a copy at launch, after successful app mutations with a short delay, every 30 seconds for changes made through external MCP, and before a normal quit. Save manually before removing the app, clearing folders, or moving computers. These copies cannot protect against a failed drive, deletion of the backup folder itself, or the very latest edits before an abrupt crash. A second copy on another drive is useful.
+
+Full JSON recovery is limited to 8 MB, 100 roadmaps and 10000 tasks, matching the restore flow. A failed or oversized backup is shown as an error and preserves the previous good copy. Export individual roadmap JSON files if the full workspace is too large. Delete and update-download actions stop if their required backup fails.
+
+**Check for updates** reads the latest published GitHub desktop release. If a newer version is available, **Back up & download update** saves recovery data first, then opens the official installer download in your browser. It selects Windows x64/ARM64, macOS Intel/Apple Silicon, or Linux x64; Linux DEB installations receive DEB, AppImage installations receive AppImage. Download and install normally. It does not execute an installer or remove data automatically. Replace the application rather than deleting its data folders.
+
+After reinstalling, choose **Restore backup**, select `Traqu-workspace-latest.json` or an older version, and restore it. Restoration creates new copies and preserves imported completion/history through the existing validation flow; it does not delete existing plans. Custom backup folders remain on disk even if the app forgets their location after app-data deletion—browse to them in the restore picker.
+
+### Remove Traqu on Ubuntu
+
+First click **Save backup now** and confirm the external recovery file exists. For the installed DEB package:
+
+```sh
+sudo apt remove traqo-desktop
+```
+
+For an AppImage, close Traqu and delete the downloaded `.AppImage` file. Keep **Documents/Traqu Backups** and `~/.config/Traqu` (or the older `~/.config/Traqo`) if you want to keep data. Do not run cleanup commands that delete those folders. You can remove the client MCP entry separately in Codex or your other AI app's settings.

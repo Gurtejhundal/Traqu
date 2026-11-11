@@ -6,6 +6,7 @@ import { AlertCircle, ArrowRight, FileText, Plus, RefreshCw, Trash2, Download, U
 import { API_URL, LOCAL_USER_ID, IS_NATIVE, IS_MOBILE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { downloadFile } from '../utils/downloadFile'
+import StorageControls from '../components/StorageControls'
 import { Companion } from '../components/MotionUI'
 
 export default function Home() {
@@ -41,16 +42,21 @@ export default function Home() {
     const deleteRoadmap = async (event, id, name) => {
         event.preventDefault()
         event.stopPropagation()
-        if (!window.confirm(`Delete “${name}”? This cannot be undone.`)) return
+        if (!window.confirm(`Delete “${name}”? ${window.traquDesktop?.storage || IS_MOBILE ? "A recovery backup must be saved first." : "This cannot be undone."}`)) return
 
         try {
+            if (window.traquDesktop?.storage) await window.traquDesktop.storage('save')
+            else if (IS_MOBILE) {
+                const { data } = await axios.get(`${API_URL}/backup`)
+                await downloadFile(new Blob([JSON.stringify(data)], { type: 'application/json' }), 'Traqu-before-delete.json')
+            }
             await axios.delete(`${API_URL}/roadmaps/${id}`, {
                 headers: { 'X-Local-User-Id': LOCAL_USER_ID },
             })
             setRoadmaps((current) => current.filter((roadmap) => roadmap.id !== id))
         } catch (deleteError) {
             console.error('Failed to delete roadmap', deleteError)
-            setError('The roadmap could not be deleted. Try again.')
+            setError(getApiErrorMessage(deleteError, 'The backup or deletion could not finish. The roadmap was kept if deletion had not started.'))
         }
     }
 
@@ -81,6 +87,7 @@ export default function Home() {
                 </div>
             </header>
 
+            <StorageControls />
             {location.state?.restored > 0 && <p role="status" className="workspace-note">Restored {location.state.restored} roadmaps as new copies.</p>}
             {loading ? (
                 <div className="loading-state" role="status" aria-live="polite">

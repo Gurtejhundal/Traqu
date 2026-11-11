@@ -94,6 +94,10 @@ Give your agent a daily format: Week → Day, one action per checkbox, and dates
 
 Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
 
+## Keep your progress (1.7+)
+
+Desktop saves recovery JSON outside app data in **Documents → Traqu Backups**, retaining the latest non-empty workspace and 20 changed versions. Library and Profile → Preferences offer **Save backup now**, **Restore backup**, **Change folder**, and **Check for updates**. Updates back up first, then open the official installer download. Keep your data and backup folders when uninstalling. Android uses the system save picker for portable backups; internal storage can be erased on uninstall. [Recovery, limits, update and Ubuntu removal guide](docs/DESKTOP.md#recovery-backups-and-updates-17).
+
 ## Meet Traqu on the web
 
 [Explore Traqu](https://traqu.vercel.app) · [Download & setup](https://traqu.vercel.app/download) · [Docs & creator](https://traqu.vercel.app/docs)

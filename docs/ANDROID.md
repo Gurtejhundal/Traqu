@@ -41,3 +41,11 @@ Native CI builds the APK, starts an Android emulator with Wi-Fi and mobile data 
 ## Android releases
 
 Android has its own version in `android/app/build.gradle`. Bump both `versionName` and `versionCode` for an update. The Android workflow builds and tests the APK offline, then publishes `Traqu-Android.apk` and its checksum under `android-v<version>`. Android releases do not replace the latest desktop release. Update the Android download URL in the README and website when publishing a new version.
+
+## Keep progress when replacing or uninstalling the app (1.7+)
+
+Android internal app storage can be erased by uninstalling or clearing app data. In Library, use **Back up**, then choose Documents or another user-controlled location in Android's system file picker. That portable JSON includes the workspace, completion history and profile. Keep the file outside Traqu's internal storage. Reinstall and use **Restore** to import it as new copies.
+
+Deleting a roadmap now requires successfully saving a workspace backup first. Canceling the Android save picker cancels deletion. The app does not silently write external Android files or promise that an uninstall preserves internal data.
+
+The **Android updates** control opens official Android releases. Save a backup first; install a compatible signed APK over the existing app when Android allows it. A signature mismatch may require backup/reinstallation. This is an update download route, not a silent automatic updater.

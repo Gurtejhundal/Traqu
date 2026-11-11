@@ -28,7 +28,7 @@ Explain it with one working example.`;
 test('daily sessions, completion cards, profile history, preferences and cursor gaze persist', async () => {
   const dir = mkdtempSync(path.join(os.tmpdir(), 'traqu-days-'));
   let app;
-  const env = { ...process.env, TRAQO_DATA_DIR: dir };
+  const env = { ...process.env, TRAQU_BACKUP_DIR: path.join(dir, '..', path.basename(dir) + '-backups'), TRAQO_DATA_DIR: dir };
   delete env.ELECTRON_RUN_AS_NODE;
   const launch = async () => {
     app = await electron.launch({ executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'), args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });

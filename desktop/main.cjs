@@ -12,6 +12,9 @@ const root = path.resolve(__dirname, '..');
 let window;
 let backend;
 let log;
+let recovery;
+let backupTimer;
+let backupDebounce;
 let quitting = false;
 let shutdownComplete = false;
 let starting = true;
@@ -108,6 +111,48 @@ async function launch() {
   log.on('error', () => {});
   log.write(`\n${new Date().toISOString()} Traqu ${app.getVersion()} ${process.platform}/${process.arch}\n`);
   menu();
+  function privateSender(event) {
+    if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
+        || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
+  }
+  ipcMain.handle('traqu:storage', async (event, action) => {
+    privateSender(event);
+    if (!recovery) throw new Error('Local backups are still starting.');
+    if (action === 'status') return recovery.status();
+    if (action === 'save') return recovery.save();
+    if (action === 'open') { const result = await shell.openPath(recovery.status().directory); if(result) throw new Error(result); return recovery.status(); }
+    if (action === 'choose') {
+      const result = await dialog.showOpenDialog(window,{title:'Choose your recovery backup folder',properties:['openDirectory','createDirectory'],defaultPath:recovery.status().directory});
+      return result.canceled ? {canceled:true} : recovery.chooseDirectory(result.filePaths[0]);
+    }
+    if (action === 'restore') {
+      const result = await dialog.showOpenDialog(window,{title:'Restore a Traqu workspace backup',defaultPath:recovery.status().directory,properties:['openFile'],filters:[{name:'Traqu JSON backup',extensions:['json']}]});
+      if(result.canceled) return {canceled:true};
+      const file=result.filePaths[0];
+      if(statSync(file).size>8*1024*1024)throw new Error('Choose a workspace backup up to 8 MB.');
+      const form=new FormData();form.append('file',new Blob([readFileSync(file)],{type:'application/json'}),path.basename(file));
+      const response=await fetch(`${backend.origin}/api/backup/restore-file`,{method:'POST',body:form,headers:{'X-Traqo-Desktop-Token':backend.token},signal:AbortSignal.timeout(30000)});
+      const data=await response.json();if(!response.ok)throw new Error(data.detail||'Restore failed. Your existing plans were kept.');
+      await recovery.save();return data;
+    }
+    throw new Error('Unknown storage action.');
+  });
+  ipcMain.handle('traqu:updates', async (event, action) => {
+    privateSender(event);
+    if(!['check','download'].includes(action))throw new Error('Unknown update action.');
+    const {newerVersion,updateAsset}=require('./recovery.cjs');
+    const response=await fetch('https://api.github.com/repos/Gurtejhundal/Traqu/releases/latest',{headers:{'Accept':'application/vnd.github+json'},signal:AbortSignal.timeout(10000)});
+    if(!response.ok)throw new Error('Could not check releases. Try again when you are online.');
+    const release=await response.json();
+    const available=!release.draft&&!release.prerelease&&newerVersion(release.tag_name,app.getVersion());
+    if(action==='download'&&available){
+      const url=updateAsset(release,process.platform,process.arch,process.env.APPIMAGE?'AppImage':'deb');
+      await recovery.save();
+      await shell.openExternal(url);
+      return {available:true,version:release.tag_name,downloaded:false,opened:true};
+    }
+    return {available,version:release.tag_name,current:app.getVersion()};
+  });
   ipcMain.handle('traqu:ai-connection', async (event, payload) => {
     if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
         || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
@@ -175,6 +220,19 @@ async function launch() {
   session.defaultSession.on('will-download', (_event, item) => {
     item.setSaveDialogOptions({ title: 'Save file', defaultPath: path.join(app.getPath('downloads'), path.basename(item.getFilename())) });
   });
+  recovery = require('./recovery.cjs').createRecovery({dataDir,documentsDir:app.getPath('documents'),backupDir:process.env.TRAQU_BACKUP_DIR,
+    readWorkspace: async () => {
+      const response=await fetch(`${backend.origin}/api/backup`,{headers:{'X-Traqo-Desktop-Token':backend.token},signal:AbortSignal.timeout(10000)});
+      const data=await response.json();if(!response.ok)throw new Error(typeof data.detail==='string'?data.detail:'Could not save a recovery backup.');return data;
+    }});
+  const automaticBackup=()=>recovery.save().catch(error=>log?.write(`Backup: ${error.message}\n`));
+  await automaticBackup();
+  backupTimer=setInterval(automaticBackup,30000);
+  session.defaultSession.webRequest.onCompleted(details=>{
+    if(isWorkspaceURL(details.url,backend.origin)&&['POST','PUT','PATCH','DELETE'].includes(details.method)&&details.statusCode>=200&&details.statusCode<300){
+      clearTimeout(backupDebounce);backupDebounce=setTimeout(automaticBackup,1000);
+    }
+  });
   starting = false;
   if (window && !window.isDestroyed()) await window.loadURL(backend.origin);
   app.on('activate', () => {
@@ -199,7 +257,8 @@ app.on('before-quit', (event) => {
   quitting = true;
   if (shutdownComplete) return;
   event.preventDefault();
-  Promise.resolve(backend?.stop()).finally(() => {
+  clearInterval(backupTimer);clearTimeout(backupDebounce);
+  Promise.resolve(recovery?.save()).catch(error=>log?.write(`Final backup: ${error.message}\n`)).then(()=>backend?.stop()).finally(() => {
     shutdownComplete = true;
     log?.end();
     app.quit();

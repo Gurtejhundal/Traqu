@@ -6,6 +6,7 @@ import { Companion } from '../components/MotionUI'
 import { useWorkspace } from '../components/WorkspacePreferences'
 import ProfileCard from '../components/ProfileCard'
 import AIConnections from '../components/AIConnections'
+import StorageControls from '../components/StorageControls'
 import { API_URL, IS_NATIVE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { drawCrop, preparePhoto } from '../utils/profile'
@@ -128,6 +129,7 @@ export default function Profile() {
             <fieldset disabled={locked} hidden={view !== 'preferences'} className="profile-editor-fields">
                 <div className="profile-section-heading"><span className="eyebrow">Preferences</span><h2>Find your rhythm.</h2><p>A few small adjustments for the way you work.</p></div>
                 <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your calendar</h3><div className="profile-field-grid"><label className="profile-field-wide">Timezone<input value={draft.timezone} onChange={event => change('timezone', event.target.value)} list="profile-timezones" placeholder="Use this device’s timezone" /><datalist id="profile-timezones">{['Asia/Kolkata', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Singapore', 'Australia/Sydney'].map(zone => <option key={zone}>{zone}</option>)}</datalist><small>Past activity keeps its original day.</small></label><label className="profile-field-wide">Start the week on<select value={draft.week_start} onChange={event => change('week_start', event.target.value)}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></label></div></section><section className="profile-editor-panel"><h3>Comfort & companion</h3><div className="profile-toggles">{toggles.map(([key, title, copy]) => <label key={key}><span><strong>{title}</strong><small>{copy}</small></span><input type="checkbox" checked={draft[key]} onChange={event => change(key, event.target.checked)} /></label>)}</div></section></div>
+                <StorageControls />
                 <AIConnections />
                 <p className="profile-privacy"><ShieldCheck size={16} />{IS_NATIVE ? 'Your profile photo, preferences and history stay in your local workspace and workspace backups.' : 'Your profile photo and preferences are saved with your workspace and its backups.'}</p>
             </fieldset>
