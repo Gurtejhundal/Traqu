@@ -1,24 +1,18 @@
 {
-  "services": {
-    "frontend": {
-      "root": "frontend",
-      "rewrites": [
-        { "source": "/(.*)", "destination": "/index.html" }
-      ]
-    },
-    "backend": {
-      "root": "backend",
-      "entrypoint": "main.py"
-    }
-  },
-  "rewrites": [
-    {
-      "source": "/api/(.*)",
-      "destination": { "service": "backend" }
-    },
-    {
-      "source": "/(.*)",
-      "destination": { "service": "frontend" }
-    }
-  ]
+  "framework": null,
+  "buildCommand": "node scripts/build-site.cjs",
+  "installCommand": "echo 'No website dependencies to install'",
+  "outputDirectory": "website/dist",
+  "cleanUrls": true,
+  "redirects": [
+    { "source": "/downloads", "destination": "/download", "permanent": true },
+    { "source": "/agents", "destination": "/download#mcp", "permanent": true },
+    { "source": "/import", "destination": "/docs#importing", "permanent": false },
+    { "source": "/profile", "destination": "/docs#profile", "permanent": false }
+  ],
+  "headers": [{ "source": "/(.*)", "headers": [
+    { "key": "X-Content-Type-Options", "value": "nosniff" },
+    { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+    { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self'; connect-src 'self' https://api.github.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'" }
+  ]}]
 }

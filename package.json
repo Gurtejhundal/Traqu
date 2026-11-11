@@ -32,7 +32,9 @@
     "pack": "npm run build && electron-builder --dir --publish never",
     "build:mobile": "node scripts/build-mobile.cjs",
     "sync:android": "npm run build:mobile && cap sync android",
-    "test:mobile": "node --test frontend/src/mobile/*.test.js"
+    "test:mobile": "node --test frontend/src/mobile/*.test.js",
+    "build:site": "node scripts/build-site.cjs",
+    "test:site": "playwright test --config website/playwright.config.cjs"
   },
   "devDependencies": {
     "@capacitor/android": "8.6.0",

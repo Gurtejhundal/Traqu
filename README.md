@@ -94,6 +94,12 @@ Give your agent a daily format: Week → Day, one action per checkbox, and dates
 
 Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
 
+## Meet Traqu on the web
+
+[Explore Traqu](https://traqu.vercel.app) · [Download & setup](https://traqu.vercel.app/download) · [Docs & creator](https://traqu.vercel.app/docs)
+
+The public site explains the app with real screenshots, a recorded GIF, an interactive Qu, installation and AI connection guides, project manuals, and optional coffee support. It is a static three-page website; the desktop and Android apps keep their own local workspaces. Its [plain HTML/CSS/JavaScript source](website) and [publishing guide](docs/WEBSITE.md) are in this repository.
+
 ## Connect your AI agent locally
 
 Traqu has a local **MCP server** for reading roadmaps, dated days, tasks and real activity from your desktop workspace. Enable editing explicitly to create plans, add notes and update checkboxes through the same validation as the app. It runs over stdio, with no public endpoint or cloud database.
@@ -198,7 +204,7 @@ React + Vite for the workspace. FastAPI + SQLAlchemy for the import engine. SQLi
 <summary>A few practical limits</summary>
 
 - PDFs need selectable text. Scanned image PDFs need OCR before import.
-- Desktop is a private, account-free local workspace. Hosted browser workspaces require signed sessions and durable storage; clearing browser data can remove anonymous access. Export backups.
+- Desktop is a private, account-free local workspace. The public website is a product and documentation site, with no hosted plan workspace. Export local workspace backups.
 - The desktop workspace starts separately from an existing web database; the [migration instructions](docs/DESKTOP.md#local-data-and-migration) explain how to preserve existing progress.
 - This version does not include cloud sync, automatic updates, or application-level database encryption.
 

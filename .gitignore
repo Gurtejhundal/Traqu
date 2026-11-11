@@ -38,3 +38,5 @@ tmp/
 .vercel
 .env*
 backend/.traqu-session-key
+
+website/dist/
