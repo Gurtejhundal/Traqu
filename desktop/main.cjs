@@ -108,6 +108,17 @@ async function launch() {
   log.on('error', () => {});
   log.write(`\n${new Date().toISOString()} Traqu ${app.getVersion()} ${process.platform}/${process.arch}\n`);
   menu();
+  ipcMain.handle('traqu:connect-codex', async (event, allowWrite) => {
+    if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
+        || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
+    if (typeof allowWrite !== 'boolean') throw new Error('Choose a connection access mode.');
+    const confirmation = await dialog.showMessageBox(window, { type: 'question',
+      message: 'Connect Traqu to Codex?',
+      detail: `${allowWrite ? 'Codex can read and edit your local roadmaps and tasks.' : 'Codex can read your local roadmaps and tasks.'}\nThis adds a connection to Codex settings and backs up the previous settings. Restart Codex afterward.`,
+      buttons: ['Cancel', 'Connect'], defaultId: 0, cancelId: 0 });
+    if (confirmation.response !== 1) return { canceled: true };
+    return require('./mcp.cjs').connectCodex({ packaged: app.isPackaged, resourcesPath: process.resourcesPath, root, dataDir: app.getPath('userData'), allowWrite });
+  });
   ipcMain.handle('traqu:save-pdf', async (event, payload) => {
     if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
         || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');

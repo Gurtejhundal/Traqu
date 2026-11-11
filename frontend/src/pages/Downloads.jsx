@@ -32,7 +32,7 @@ export default function Downloads() {
                     <section className="download-card" key={name}>
                         <div className="guide-card-top"><img src={logo} alt="" className="os-logo" width="32" height="32" /><span>0{index + 1}</span></div>
                         <h2>{name}</h2><p className="download-spec">{detail}</p>
-                        <div className="download-actions">{files.map(([label, filename]) => <a className="btn-primary" href={filename === 'Traqu-Android.apk' ? `${releases}/download/android-v1.5.1/${filename}` : asset(filename)} key={filename}><ArrowDownToLine size={15} /> {label}</a>)}</div>
+                        <div className="download-actions">{files.map(([label, filename]) => <a className="btn-primary" href={filename === 'Traqu-Android.apk' ? `${releases}/download/android-v1.6.0/${filename}` : asset(filename)} key={filename}><ArrowDownToLine size={15} /> {label}</a>)}</div>
                         <p className="download-instructions">{steps}</p>
                     </section>
                 ))}

@@ -75,6 +75,14 @@ jobs:
             ../.venv-desktop/bin/python -m pytest -q
           fi
       - run: npm run build
+      - name: Verify bundled MCP over stdio
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" = "Windows" ]; then
+            TRAQU_TEST_MCP="$GITHUB_WORKSPACE/dist/backend/traqu-mcp/traqu-mcp.exe" .venv-desktop/Scripts/python.exe -m unittest discover -s mcp_tests -v
+          else
+            TRAQU_TEST_MCP="$GITHUB_WORKSPACE/dist/backend/traqu-mcp/traqu-mcp" .venv-desktop/bin/python -m unittest discover -s mcp_tests -v
+          fi
       - name: Verify native Windows architecture
         if: runner.os == 'Windows'
         run: node scripts/check-windows-architecture.cjs ${{ matrix.arch }} node_modules/electron/dist/electron.exe dist/backend/traqo-backend/traqo-backend.exe

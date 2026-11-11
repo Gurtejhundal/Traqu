@@ -10,4 +10,15 @@ const result = spawnSync(python, [
   'backend/desktop_server.py',
 ], { cwd: root, stdio: 'inherit' });
 if (result.error) throw result.error;
-process.exit(result.status ?? 1);
+if (result.status !== 0) process.exit(result.status ?? 1);
+const mcp = spawnSync(python, [
+  '-m', 'PyInstaller', '--noconfirm', '--clean', '--onedir', '--name', 'traqu-mcp',
+  '--distpath', 'dist/backend', '--workpath', 'build/pyinstaller-mcp', '--specpath', 'build',
+  '--paths', 'backend', '--collect-submodules', 'mcp.server', '--collect-submodules', 'mcp.shared', '--collect-all', 'tzdata',
+  '--collect-all', 'pdfplumber', '--collect-all', 'pypdfium2',
+  '--hidden-import', 'main', '--hidden-import', 'db',
+  '--add-data', `${path.join(root, 'frontend/public/agents/SKILL.md')}${require('node:path').delimiter}agents`,
+  'backend/mcp_server.py',
+], { cwd: root, stdio: 'inherit' });
+if (mcp.error) throw mcp.error;
+process.exit(mcp.status ?? 1);

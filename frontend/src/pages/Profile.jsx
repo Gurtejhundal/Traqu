@@ -29,11 +29,19 @@ export default function Profile() {
     const [crop, setCrop] = useState({ zoom: 1, x: 50, y: 50 })
     const [summary, setSummary] = useState(null)
     const [cardOpen, setCardOpen] = useState(false)
+    const [connection, setConnection] = useState('')
+    const [connecting, setConnecting] = useState(false)
+    const [allowWrite, setAllowWrite] = useState(false)
+    const previousProfile = useRef(profile)
     const fileInput = useRef(null)
     const cropCanvas = useRef(null)
     const uploadSequence = useRef(0)
     const dirty = JSON.stringify(draft) !== JSON.stringify(profile)
-    useEffect(() => { setDraft(profile) }, [profile])
+    useEffect(() => {
+        const previous = previousProfile.current
+        setDraft(current => Object.fromEntries(Object.entries(profile).map(([key, value]) => [key, current[key] === previous[key] ? value : current[key]])))
+        previousProfile.current = profile
+    }, [profile])
     useEffect(() => {
         if (!dirty) return
         const warn = event => { event.preventDefault(); event.returnValue = '' }
@@ -64,7 +72,24 @@ export default function Profile() {
         } catch (err) { if (sequence === uploadSequence.current) setPhotoError(err.message) }
         finally { if (sequence === uploadSequence.current) setReading(false) }
     }
-    function usePhoto() { change('avatar', cropCanvas.current.toDataURL('image/jpeg', .88)); setPhoto(null) }
+    async function persistAvatar(avatar) {
+        if (saving) return
+        setSaving(true); setPhotoError(''); setSaved(false)
+        try {
+            const { data } = await axios.put(`${API_URL}/profile`, { ...profile, avatar })
+            setDraft(current => ({ ...current, avatar: data.avatar })); setProfile(data); setPhoto(null); setSaved(true)
+        } catch (err) { setPhotoError(getApiErrorMessage(err, 'Photo could not be saved. Please try again.')) }
+        finally { setSaving(false) }
+    }
+    function usePhoto() { return persistAvatar(cropCanvas.current.toDataURL('image/jpeg', .88)) }
+    async function connectCodex() {
+        setConnecting(true); setConnection('')
+        try {
+            const result = await window.traquDesktop.connectCodex(allowWrite)
+            setConnection(result.canceled ? 'Connection canceled.' : `Connected with ${result.readOnly ? 'read-only' : 'editing'} access. Restart Codex to load Traqu.`)
+        } catch (err) { setConnection(err.message || 'Could not connect. Please try again.') }
+        finally { setConnecting(false) }
+    }
     async function save(event) {
         event.preventDefault()
         if (saving || photo || reading) return
@@ -95,9 +120,10 @@ export default function Profile() {
             </aside><div className="profile-activity"><ActivityCalendar onSummary={setSummary} /></div>
         </div>
         <form onSubmit={save} noValidate className="profile-editor">
+            {view !== 'overview' && <footer className="profile-savebar"><span role="status" className={saved ? 'profile-saved' : 'profile-save-status'}>{saved ? (dirty ? 'Photo saved. Other changes are ready to save.' : 'Your profile and preferences are saved.') : photo ? 'Use or cancel the photo crop first.' : dirty ? 'You have unsaved changes.' : 'Everything is up to date.'}</span><div><button type="button" className="btn-secondary" disabled={!dirty || locked || Boolean(photo)} onClick={() => { setDraft(profile); setSaved(false); setError(''); setPhotoError('') }}><RotateCcw size={14} />Discard</button><button type="submit" className="btn-primary" disabled={!dirty || locked || Boolean(photo) || reading}><Check size={14} />{saving ? 'Saving…' : 'Save settings'}</button></div></footer>}
             <fieldset disabled={locked} hidden={view !== 'personalize'} className="profile-editor-fields">
-                <div className="profile-section-heading"><span className="eyebrow">Personalize</span><h2>A space that feels like you.</h2><p>Preview your changes above. Save when it feels right.</p></div>
-                <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your identity</h3><div className="photo-tools"><button type="button" className="btn-secondary" onClick={() => fileInput.current?.click()} disabled={reading}><ImagePlus size={15} />{reading ? 'Opening photo…' : 'Upload photo'}</button>{draft.avatar && <button type="button" className="btn-quiet" onClick={() => change('avatar', '')}><X size={14} />Remove</button>}</div><p className="profile-hint">JPG, PNG or WebP, up to 8 MB. Your photo is resized before it is saved; its location metadata is removed.</p>
+                <div className="profile-section-heading"><span className="eyebrow">Personalize</span><h2>A space that feels like you.</h2><p>Photos save when you choose Use photo. Save your other changes with the controls above.</p></div>
+                <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your identity</h3><div className="photo-tools"><button type="button" className="btn-secondary" onClick={() => fileInput.current?.click()} disabled={reading}><ImagePlus size={15} />{reading ? 'Opening photo…' : 'Upload photo'}</button>{draft.avatar && <button type="button" className="btn-quiet" onClick={() => persistAvatar('')}><X size={14} />Remove</button>}</div><p className="profile-hint">JPG, PNG or WebP, up to 8 MB. Your photo is resized before it is saved; its location metadata is removed.</p>
                     {photoError && <p className="inline-error" role="alert">{photoError}</p>}
                     {photo && <section className="photo-crop" aria-label="Crop your profile photo"><canvas ref={cropCanvas} width="256" height="256" className={draft.avatar_monochrome ? 'crop-mono' : ''} aria-label="Photo crop preview" /><div>{[['zoom', 'Zoom', 1, 3, .01], ['x', 'Horizontal position', 0, 100, 1], ['y', 'Vertical position', 0, 100, 1]].map(([key, title, min, max, step]) => <label key={key}>{title}<input type="range" min={min} max={max} step={step} value={crop[key]} onChange={event => setCrop(current => ({ ...current, [key]: Number(event.target.value) }))} /></label>)}<div className="photo-tools"><button type="button" className="btn-primary" onClick={usePhoto}><Check size={14} />Use photo</button><button type="button" className="btn-secondary" onClick={() => setPhoto(null)}>Cancel crop</button></div></div></section>}
                     <div className="profile-field-grid"><label>Name<input value={draft.name} onChange={event => change('name', event.target.value)} maxLength={80} autoComplete="nickname" required /></label><label>Your goal<input value={draft.goal} onChange={event => change('goal', event.target.value)} maxLength={240} placeholder="Get confident with C++, one day at a time" /></label><label className="profile-field-wide">About you<textarea value={draft.bio} onChange={event => change('bio', event.target.value)} maxLength={240} rows={2} placeholder="A few words about you" /></label></div>
@@ -112,9 +138,10 @@ export default function Profile() {
             <fieldset disabled={locked} hidden={view !== 'preferences'} className="profile-editor-fields">
                 <div className="profile-section-heading"><span className="eyebrow">Preferences</span><h2>Find your rhythm.</h2><p>A few small adjustments for the way you work.</p></div>
                 <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your calendar</h3><div className="profile-field-grid"><label className="profile-field-wide">Timezone<input value={draft.timezone} onChange={event => change('timezone', event.target.value)} list="profile-timezones" placeholder="Use this device’s timezone" /><datalist id="profile-timezones">{['Asia/Kolkata', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Singapore', 'Australia/Sydney'].map(zone => <option key={zone}>{zone}</option>)}</datalist><small>Past activity keeps its original day.</small></label><label className="profile-field-wide">Start the week on<select value={draft.week_start} onChange={event => change('week_start', event.target.value)}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></label></div></section><section className="profile-editor-panel"><h3>Comfort & companion</h3><div className="profile-toggles">{toggles.map(([key, title, copy]) => <label key={key}><span><strong>{title}</strong><small>{copy}</small></span><input type="checkbox" checked={draft[key]} onChange={event => change(key, event.target.checked)} /></label>)}</div></section></div>
+                {window.traquDesktop?.connectCodex && <section className="profile-editor-panel ai-connection"><span className="eyebrow">AI connections</span><h3>Bring your plan to Codex.</h3><p>Connect your local workspace. No Python, terminal or account key needed. Information you share with Codex follows its data settings.</p><label className="profile-inline-toggle"><span>Allow Codex to edit roadmaps and tasks</span><input type="checkbox" checked={allowWrite} onChange={event => setAllowWrite(event.target.checked)} /></label><button type="button" className="btn-secondary" disabled={connecting} onClick={connectCodex}>{connecting ? 'Connecting…' : 'Connect to Codex'}</button><p role="status">{connection || 'Read-only by default. Restart Codex after connecting.'}</p></section>}
                 <p className="profile-privacy"><ShieldCheck size={16} />{IS_NATIVE ? 'Your profile photo, preferences and history stay in your local workspace and workspace backups.' : 'Your profile photo and preferences are saved with your workspace and its backups.'}</p>
             </fieldset>
-            {view !== 'overview' && <footer className="profile-savebar"><span role="status" className={saved ? 'profile-saved' : 'profile-save-status'}>{saved ? 'Your profile and preferences are saved.' : photo ? 'Use or cancel the photo crop first.' : dirty ? 'You have unsaved changes.' : 'Everything is up to date.'}</span><div><button type="button" className="btn-secondary" disabled={!dirty || locked || Boolean(photo)} onClick={() => { setDraft(profile); setSaved(false); setError(''); setPhotoError('') }}><RotateCcw size={14} />Discard</button><button type="submit" className="btn-primary" disabled={!dirty || locked || Boolean(photo) || reading}><Check size={14} />{saving ? 'Saving…' : 'Save settings'}</button></div></footer>}
+
         </form>
         {cardOpen && summary && <ProfileCard profile={profile} summary={summary} onClose={() => setCardOpen(false)} />}
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-label="Profile photo file" disabled={locked} onChange={choosePhoto} />

@@ -40,7 +40,7 @@ Pick your device. Bring a plan. Start with Day 1.
     <td width="50%" valign="top">
       <h3><img src="frontend/public/os/android.svg" width="24" height="24" alt=""> &nbsp; Android</h3>
       <p>Your daily plans, progress and little companion. Right on your phone.</p>
-      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/download/android-v1.5.1/Traqu-Android.apk"><b>↓ Download APK</b></a></p>
+      <p><a href="https://github.com/Gurtejhundal/Traqu/releases/download/android-v1.6.0/Traqu-Android.apk"><b>↓ Download APK</b></a></p>
       <sub>Android 7 or newer</sub>
     </td>
     <td width="50%" valign="top">
@@ -93,6 +93,14 @@ Give your agent a daily format: Week → Day, one action per checkbox, and dates
 <img src="docs/screenshots/agents.png" alt="Traqu agent guide with a downloadable skill, copyable prompt and JSON example." width="1080">
 
 Dated daily planners now keep individual time slots, weekly context, durations, optional status, and source-page references. On the supplied private 40-page benchmark: **724 timed tasks across all 212 dates**, including 56 optional tasks. The original file is not published. See [parser evaluation and limits](docs/PDF_IMPORT.md).
+
+## Connect your AI agent locally
+
+Traqu has a local **MCP server** for reading roadmaps, dated days, tasks and real activity from your desktop workspace. Enable editing explicitly to create plans, add notes and update checkboxes through the same validation as the app. It runs over stdio, with no public endpoint or cloud database.
+
+In desktop version **1.6.0+**, open **Profile → Preferences → AI connections → Connect to Codex**. Choose read-only or editing access, confirm, then restart Codex. The server is bundled: no Python, Node.js or terminal setup is needed.
+
+[Codex setup, source installation, available tools and access modes](docs/MCP.md).
 
 ## One day at a time
 

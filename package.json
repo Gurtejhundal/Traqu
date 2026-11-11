@@ -1,6 +1,6 @@
 {
   "name": "traqu-desktop",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
   "repository": {
@@ -19,6 +19,8 @@
   },
   "scripts": {
     "setup": "node scripts/setup.cjs",
+    "setup:mcp": "node scripts/setup-mcp.cjs",
+    "mcp": "node scripts/mcp.cjs",
     "build:frontend": "node scripts/build-frontend.cjs",
     "build:backend": "node scripts/build-backend.cjs",
     "start": "npm run build:frontend && electron .",
@@ -44,7 +46,7 @@
   "build": {
     "appId": "io.github.gurtejhundal.traqo",
     "productName": "Traqu",
-    "copyright": "Copyright © 2026 Gurtej Hundal",
+    "copyright": "Copyright \u00a9 2026 Gurtej Hundal",
     "electronDist": "node_modules/electron/dist",
     "directories": {
       "output": "release",
