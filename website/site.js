@@ -140,6 +140,6 @@ if (document.querySelector('#release-status')) {
       if (!version || release.draft || release.prerelease) return;
       document.querySelector('#release-status').textContent = `Latest published desktop release · ${release.tag_name}`;
       const bundled = Number(version[1]) > 1 || Number(version[1]) === 1 && (Number(version[2]) > 6 || Number(version[2]) === 6 && Number(version[3]) >= 1);
-      document.querySelector('#mcp-release-note').textContent = bundled ? 'The latest published desktop release includes this setup. Download above, then open Profile → Preferences.' : `The latest desktop download is ${release.tag_name}. Multi-client setup needs 1.6.1+. Use the source MCP manual for now, or wait for the new installers to finish verification.`;
+      document.querySelector('#mcp-release-note').textContent = bundled ? `The latest published desktop release includes MCP setup. Open Profile → ${Number(version[1]) > 1 || Number(version[2]) >= 8 ? 'AI connections' : 'Preferences → AI connections'}.` : `The latest desktop download is ${release.tag_name}. Multi-client setup needs 1.6.1+. Use the source MCP manual for now, or wait for the new installers to finish verification.`;
     }).catch(() => { /* Static links and explicit version requirements remain usable. */ });
 }

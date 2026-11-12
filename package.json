@@ -1,6 +1,6 @@
 {
   "name": "traqu-desktop",
-  "version": "1.7.1",
+  "version": "1.8.0",
   "description": "A quiet, local-first roadmap workspace for Linux, Windows, and macOS.",
   "homepage": "https://github.com/Gurtejhundal/Traqu",
   "repository": {
@@ -74,6 +74,13 @@
         "to": "frontend",
         "filter": [
           "**/*"
+        ]
+      },
+      {
+        "from": "plugins/traqu",
+        "to": "agent-workflow",
+        "filter": [
+          "skills/**/*"
         ]
       }
     ],

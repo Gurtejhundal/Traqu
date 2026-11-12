@@ -6,7 +6,7 @@ The server uses the same SQLite workspace and API validation as the desktop app.
 
 ## Connect from the installed desktop app
 
-In **1.6.1+**, open **Profile → Preferences → AI connections**, choose your AI app and read-only or editing access, then click **Connect**. Confirm the native dialog and restart the selected app. No Python, Node.js or terminal is required. Your AI app must be installed and authenticated separately. Setup adds configuration; it cannot verify model access, subscriptions or tool permissions inside another app. Version 1.6.0 offers Codex only.
+In **1.8.0+**, open **Profile → AI connections** (1.6.1–1.7.x: Profile → Preferences → AI connections), choose your AI app and read-only or editing access, then click **Connect**. Confirm the native dialog and restart the selected app. No Python, Node.js or terminal is required. Your AI app must be installed and authenticated separately. Setup adds configuration; it cannot verify model access, subscriptions or tool permissions inside another app. Version 1.6.0 offers Codex only.
 
 | Client | Settings used by automatic setup |
 | --- | --- |
@@ -35,6 +35,23 @@ codex plugin add traqu@traqu
 ```
 
 Restart Codex, open a new chat and select **Traqu** from the composer’s plugin picker (or mention it with `@`). Ask: “Use Traqu to show my internship roadmap’s next unfinished day.” The plugin is distributed through this repository marketplace, not the public plugin directory. Installing its instructions alone does not connect a workspace; complete **Connect to Codex** first. Remove it with Codex’s plugin settings; your roadmaps remain in Traqu.
+
+### Workflows for other coding agents
+
+In desktop **1.8.0+**, the second AI connections card installs a workflow for the selected agent, after a native confirmation. MCP access remains separate. Codex and Claude Code installation requires their CLI on PATH and internet access. If that is unavailable, use **Copy install steps**. Client restrictions or older versions may also require manual setup.
+
+| Agent | Workflow | Manual installation |
+| --- | --- | --- |
+| Codex | Plugin with Traqu composer artwork | Commands above; select Traqu in a new chat |
+| Claude Code | Plugin | `claude plugin marketplace add Gurtejhundal/Traqu`, then `claude plugin install traqu@traqu --scope user`; restart or reload plugins |
+| Gemini CLI | Agent skill | `gemini skills install https://github.com/Gurtejhundal/Traqu.git --path plugins/traqu/skills/traqu`; reload skills |
+| Cursor | Agent skill | Install from Traqu or save [SKILL.md](https://raw.githubusercontent.com/Gurtejhundal/Traqu/main/plugins/traqu/skills/traqu/SKILL.md) to `~/.cursor/skills/traqu/SKILL.md`; restart and use `/traqu` |
+| Antigravity | Agent skill | Install from Traqu or save the same file to `~/.gemini/config/skills/traqu/SKILL.md`; restart and use `/traqu` |
+| Claude Desktop | Existing MCP tools + copied prompt | Use Connect, then Copy chat prompt for reusable instructions |
+
+Skill installations preserve conflicting user-authored Traqu files. They do not add a branded composer chip or imply a public marketplace listing in other agents. Remove a local skill using that agent’s settings or delete only the installed `traqu` skill folder. Removing instructions does not remove the separate MCP connection.
+
+Official workflow references: [Codex packaging](https://developers.openai.com/plugins/build/plugins), [Claude Code plugins](https://code.claude.com/docs/en/discover-plugins), [Gemini skills](https://geminicli.com/docs/cli/skills/), [Cursor skills](https://cursor.com/docs/skills), [Antigravity skills](https://antigravity.google/docs/skills). Checked November 12, 2026. Client-native rendering and availability vary; Traqu does not bypass their account or approval requirements.
 
 ### Free ChatGPT, Claude and Gemini browser chats
 

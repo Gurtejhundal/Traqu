@@ -5,7 +5,9 @@ test('external recovery restores real progress after deleting app data, and upda
  async function launch(){
   const env={...process.env,TRAQO_DATA_DIR:dataDir,TRAQU_BACKUP_DIR:backupDir};delete env.ELECTRON_RUN_AS_NODE;
   app=await electron.launch({executablePath:process.env.TRAQO_TEST_EXECUTABLE||require('electron'),args:[...(process.env.TRAQO_TEST_NO_SANDBOX==='1'?['--no-sandbox']:[]),...(process.env.TRAQO_TEST_EXECUTABLE?[]:[path.resolve(__dirname,'../..')])],env});
-  const page=await app.firstWindow();await page.waitForURL(/127\.0\.0\.1/);return page;
+  const page=await app.firstWindow();await page.waitForURL(/127\.0\.0\.1/);
+    await page.evaluate(async () => { const profile = await (await fetch('/api/profile')).json(); await fetch('/api/profile', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,onboarding_completed:true})}); });
+    await page.reload();return page;
  }
  try{
   let page=await launch();

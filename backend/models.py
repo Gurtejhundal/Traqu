@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Literal
 
 
 MAX_ROADMAP_NAME_LENGTH = 200
@@ -53,6 +53,21 @@ class ProfileUpdate(BaseModel):
     calendar_palette: str = Field(default='graphite', pattern='^(graphite|sage|slate)$')
     weekly_goal: int = Field(default=5, ge=1, le=7)
     return_note: str = Field(default='', max_length=160)
+    onboarding_completed: bool = False
+    interests: List[Literal['Coding', 'AI & ML', 'Design', 'Fitness', 'Reading', 'Career']] = Field(default_factory=list, max_length=6)
+    reminder_enabled: bool = False
+    reminder_time: str = Field(default='19:00', pattern=r'^([01]\d|2[0-3]):[0-5]\d$')
+    desktop_notifications: bool = False
+    notifications_seen: List[str] = Field(default_factory=list, max_length=40)
+
+    @field_validator('notifications_seen')
+    @classmethod
+    def valid_notification_ids(cls, value):
+        import re
+        if any(not re.fullmatch(r'(ai-connection|daily-\d{4}-\d{2}-\d{2})', item) for item in value):
+            raise ValueError('Invalid notification state.')
+        return value
+
 
     @field_validator('avatar')
     @classmethod

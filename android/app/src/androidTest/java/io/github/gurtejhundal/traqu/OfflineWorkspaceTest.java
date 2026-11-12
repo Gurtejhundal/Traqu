@@ -33,6 +33,8 @@ public class OfflineWorkspaceTest {
     @Test public void profileAndDailyPlanPersistWithoutAnApiServer() throws Exception {
         try (ActivityScenario<MainActivity> scenario = ActivityScenario.launch(MainActivity.class)) {
             scenario.onActivity(activity -> webView = activity.getBridge().getWebView());
+            waitFor("document.querySelector('.quick-setup') || document.querySelector('h1')?.textContent.includes('Your roadmaps')");
+            js("Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='Set up later')?.click()");
             waitFor("document.querySelector('h1')?.textContent.includes('Your roadmaps')");
             assertFalse(js("document.body.innerText").contains("online workspace is not available"));
             js("document.querySelector('a[href=\"/profile\"]').click()");

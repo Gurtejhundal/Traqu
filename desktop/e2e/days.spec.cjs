@@ -33,6 +33,9 @@ test('daily sessions, completion cards, profile history, preferences and cursor 
   const launch = async () => {
     app = await electron.launch({ executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'), args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });
     const page = await app.firstWindow();
+    await page.waitForURL(/127\.0\.0\.1/);
+    await page.evaluate(async () => { const profile = await (await fetch('/api/profile')).json(); await fetch('/api/profile', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,onboarding_completed:true})}); });
+    await page.reload();
     await expect(page.getByRole('heading', { name: 'Your roadmaps', exact: true })).toBeVisible({ timeout: 60000 });
     return page;
   };
@@ -99,6 +102,7 @@ test('daily sessions, completion cards, profile history, preferences and cursor 
     await expect(page.locator('.profile-photo img')).toBeVisible();
     await expect(page.locator('.profile-photo')).toHaveClass(/photo-rounded/);
     await expect(page.locator('.rhythm-banner strong')).toHaveText('1 of 3 active days');
+    await page.getByRole('navigation', { name: 'Profile sections' }).getByRole('button', { name: 'Overview', exact: true }).click();
     await page.getByRole('button', { name: 'Make my profile card', exact: true }).click();
     const cardDialog = page.getByRole('dialog');
     await expect(cardDialog.getByRole('heading', { name: 'Made of small steps.' })).toBeVisible();

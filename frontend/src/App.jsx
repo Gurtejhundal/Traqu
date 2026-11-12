@@ -5,7 +5,16 @@ import Home from './pages/Home'
 import './index.css'
 import { IS_NATIVE } from './config'
 import { MotionProvider, RouteTransition } from './components/MotionUI'
-import { WorkspacePreferences } from './components/WorkspacePreferences'
+import { useWorkspace, WorkspacePreferences } from './components/WorkspacePreferences'
+
+import QuickSetup from './components/QuickSetup'
+
+function WorkspaceShell() {
+    const { profile, ready, error } = useWorkspace()
+    if (IS_NATIVE && !ready) return <div className="loading-state" role="status">Opening your workspace…</div>
+    if (IS_NATIVE && ready && !error && !profile.onboarding_completed) return <QuickSetup />
+    return <div className="app-container"><Navbar /><div className="content-container"><AppRoutes /></div></div>
+}
 
 const RoadmapView = lazy(() => import('./pages/RoadmapView'))
 const Import = lazy(() => import('./pages/Import'))
@@ -39,12 +48,7 @@ function AppRoutes() {
 function App() {
     return (
         <WorkspacePreferences><MotionProvider><Router>
-            <div className="app-container">
-                <Navbar />
-                <div className="content-container">
-                    <AppRoutes />
-                </div>
-            </div>
+            <WorkspaceShell />
         </Router></MotionProvider></WorkspacePreferences>
     )
 }

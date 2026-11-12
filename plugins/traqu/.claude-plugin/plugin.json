@@ -1,0 +1,11 @@
+{
+  "name": "traqu",
+  "version": "1.1.0",
+  "description": "Review your local Traqu roadmaps and work through the next unfinished day.",
+  "author": {
+    "name": "Gurtejbir Singh"
+  },
+  "homepage": "https://traqu.vercel.app",
+  "repository": "https://github.com/Gurtejhundal/Traqu",
+  "license": "MIT"
+}

@@ -5,7 +5,7 @@
   </picture>
 </p>
 
-<p align="center"><b>your next chapter, one checkbox at a time.</b><br>Turn a PDF, a Word document, or that very ambitious pasted plan into a roadmap you can actually follow.</p>
+<p align="center"><b>big plans. small daily wins.</b><br>Turn a PDF, a Word document, or that very ambitious pasted plan into a roadmap you can actually follow.</p>
 
 <p align="center">
   <a href="#get-the-app"><b>↓ Get the app</b></a> &nbsp; · &nbsp;
@@ -108,13 +108,19 @@ The public site explains the app with real screenshots, a recorded GIF, an inter
 
 Traqu has a local **MCP server** for reading roadmaps, dated days, tasks and real activity from your desktop workspace. Enable editing explicitly to create plans, add notes and update checkboxes through the same validation as the app. It runs over stdio, with no public endpoint or cloud database.
 
-In desktop version **1.6.1+**, open **Profile → Preferences → AI connections** and choose **Codex, Claude Desktop, Claude Code, Gemini CLI, Antigravity or Cursor**. Choose read-only or editing access, confirm setup, then restart your AI app. The server is bundled: no Python, Node.js or terminal setup is needed.
+In desktop version **1.8.0+**, open **Profile → AI connections** (older versions: Profile → Preferences → AI connections) and choose **Codex, Claude Desktop, Claude Code, Gemini CLI, Antigravity or Cursor**. Choose read-only or editing access, confirm setup, then restart your AI app. The server is bundled: no Python, Node.js or terminal setup is needed.
 
 For free ChatGPT, Claude or Gemini browser chats, **Copy chat prompt** provides the full Traqu format and optionally one chosen roadmap. Paste it into your chat and import the result. This is a manual copy/import workflow, not live synchronization.
 
 Want the Traqu name and logo in your Codex composer? Install the optional [Traqu Codex plugin](docs/MCP.md#traqu-logo-in-the-codex-composer), then select Traqu in a new chat. It uses your existing MCP connection.
 
 [Client setup, source installation, available tools and access modes](docs/MCP.md).
+
+## Make yourself at home
+
+Version **1.8.0** adds a quick, optional welcome setup: a name, a photo, a few interests and your own reminder time. Profile has a dedicated **AI connections** tab for live MCP access, agent plugins/skills and chat prompts. The navigation bell keeps suggestions and opted-in daily reminders in one quiet place.
+
+Desktop notifications are optional and work while Traqu is open or minimized. Android uses the in-app inbox. [Setup, reminders and delivery limits](docs/SETUP_AND_REMINDERS.md).
 
 ## One day at a time
 

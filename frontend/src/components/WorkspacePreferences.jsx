@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 import axios from 'axios'
 import { API_URL } from '../config'
 
-const defaults = { name: 'Your workspace', bio: '', goal: '', timezone: '', week_start: 'monday', compact: false, pet_motion: true, reduced_motion: false, avatar: '', avatar_shape: 'circle', avatar_monochrome: true, cover: 'paper', calendar_palette: 'graphite', weekly_goal: 5, return_note: '' }
+import { profileDefaults as defaults } from '../utils/workspaceProfile'
+
 const Workspace = createContext(null)
 
 export function WorkspacePreferences({ children }) {

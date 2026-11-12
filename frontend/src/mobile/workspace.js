@@ -1,6 +1,7 @@
 import { previewText, previewFile, validateTasks } from './parser.js'
 
-export const profileDefaults={name:'Your workspace',bio:'',goal:'',timezone:'',week_start:'monday',compact:false,pet_motion:true,reduced_motion:false,avatar:'',avatar_shape:'circle',avatar_monochrome:true,cover:'paper',calendar_palette:'graphite',weekly_goal:5,return_note:''}
+import { profileDefaults, INTERESTS } from '../utils/workspaceProfile.js'
+export { profileDefaults }
 export const freshWorkspace=()=>({version:1,next:1,profile:{...profileDefaults},roadmaps:[],activity:[]})
 const fail=(message,status=400)=>{const e=new Error(message);e.status=status;throw e}
 const id=state=>state.next++
@@ -45,6 +46,10 @@ function validProfile(input) {
     for(const [key,choices] of [['cover',['paper','stone','ink']],['calendar_palette',['graphite','sage','slate']],['avatar_shape',['circle','rounded']],['week_start',['monday','sunday']]])if(!choices.includes(p[key]))fail('Invalid profile choice.')
     if(!Number.isInteger(p.weekly_goal)||p.weekly_goal<1||p.weekly_goal>7)fail('Choose 1 to 7 active days.')
     if(typeof p.avatar!=='string'||p.avatar.length>350000 || p.avatar && !/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(p.avatar))fail('Choose a valid profile photo.')
+    for(const key of ['compact','pet_motion','reduced_motion','avatar_monochrome','onboarding_completed','reminder_enabled','desktop_notifications'])if(typeof p[key]!=='boolean')fail('Invalid profile preference.')
+    if(!Array.isArray(p.interests)||p.interests.length>6||p.interests.some(x=>!INTERESTS.includes(x)))fail('Choose valid interests.')
+    if(typeof p.reminder_time!=='string'||!/^([01]\d|2[0-3]):[0-5]\d$/.test(p.reminder_time))fail('Choose a valid reminder time.')
+    if(!Array.isArray(p.notifications_seen)||p.notifications_seen.length>40||p.notifications_seen.some(x=>typeof x!=='string'||! /^(ai-connection|daily-\d{4}-\d{2}-\d{2})$/.test(x)))fail('Invalid notification state.')
     return p
 }
 function activitySummary(s,params,now) {
@@ -84,7 +89,7 @@ export function routeRequest(s,method,path,body={},params={},prepared={},now=new
         if(!Array.isArray(rows)||rows.length>30000)fail('Invalid activity backup.')
         for(const a of rows){if(typeof a.event_key!=='string'||typeof a.is_done!=='boolean'||typeof a.title!=='string'||a.title.length>4000||!a.occurred_at||new Date(a.occurred_at)>new Date(now.getTime()+300000)||isoDay(new Date(a.occurred_at),a.timezone)!==a.day)fail('Invalid activity record.')}
         const roadmaps=body.roadmaps.map(r=>{let name=r.name;let n=1;while(s.roadmaps.some(x=>x.name.toLowerCase()===name.toLowerCase()))name=r.name+` (restored ${n++})`;return create(s,{...r,name})})
-        if(profile && !s.profileSaved){s.profile=profile;s.profileSaved=true}
+        if(profile && !Object.entries(profileDefaults).some(([key,value])=>!['onboarding_completed','notifications_seen'].includes(key)&&JSON.stringify(s.profile[key]??value)!==JSON.stringify(value))){s.profile={...profile,onboarding_completed:Boolean(s.profile.onboarding_completed||profile.onboarding_completed)};s.profileSaved=true}
         const keys=new Set(s.activity.map(a=>a.event_key));for(const a of rows)if(!keys.has(a.event_key)){s.activity.push({...a,task_id:null});keys.add(a.event_key)}
         return {roadmaps,message:`Restored ${roadmaps.length} roadmaps as new copies.`}
     }

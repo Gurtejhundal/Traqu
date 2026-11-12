@@ -3,7 +3,7 @@ name: traqu
 description: Use the connected local Traqu workspace to review roadmaps, choose the next day, inspect unfinished tasks, and make requested plan updates.
 ---
 
-Use the Traqu MCP tools for the user's real workspace. This plugin supplies instructions and branding; the MCP connection is configured separately in Traqu → Profile → Preferences → AI connections → Codex. If Traqu tools are unavailable, explain that setup and ask the user to restart Codex. Do not read SQLite files or guess workspace paths.
+Use the Traqu MCP tools for the user's real workspace. This plugin supplies instructions and branding; the MCP connection is configured separately in Traqu → Profile → AI connections → choose your AI app. If Traqu tools are unavailable, explain that setup and ask the user to restart the AI app. Do not read SQLite files or guess workspace paths.
 
 - List roadmaps to identify the requested plan. Read its sections and tasks before summarizing or editing; preserve Week → Day hierarchy and dates.
 - For “what should I do today?”, show the relevant day’s topic, linked questions and unfinished tasks. If no day matches, distinguish the next unfinished day from today’s calendar date. Never invent completion history.

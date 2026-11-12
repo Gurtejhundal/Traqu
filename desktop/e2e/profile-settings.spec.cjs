@@ -9,6 +9,8 @@ test('photo saves immediately without saving unrelated edits and save controls s
   try {
     const page=await app.firstWindow();
     await page.waitForURL(/127\.0\.0\.1/);
+    await page.evaluate(async () => { const profile = await (await fetch('/api/profile')).json(); await fetch('/api/profile', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,onboarding_completed:true})}); });
+    await page.reload();
     await page.goto(new URL('/profile',page.url()).href);
     await page.getByRole('button',{name:'Personalize',exact:true}).first().click();
     const name=page.getByRole('textbox',{name:'Name',exact:true});
@@ -23,7 +25,7 @@ test('photo saves immediately without saving unrelated edits and save controls s
     await page.getByRole('button',{name:'Save settings',exact:true}).click();
     await expect(page.getByRole('status').filter({hasText:'Your profile and preferences are saved.'})).toBeVisible();
     expect(await page.locator('.profile-savebar').evaluate(el => Boolean(el.compareDocumentPosition(document.querySelector('.profile-section-heading')) & Node.DOCUMENT_POSITION_FOLLOWING))).toBe(true);
-    await page.getByRole('button',{name:'Preferences',exact:true}).click();
+    await page.getByRole('button',{name:'AI connections',exact:true}).click();
     await expect(page.getByRole('button',{name:'Connect to Codex',exact:true})).toBeVisible();
     for (const client of ['claude-desktop','claude-code','gemini-cli','antigravity','cursor','codex']) {
       await page.getByLabel('Your AI app', {exact:true}).selectOption(client);
@@ -38,7 +40,7 @@ test('photo saves immediately without saving unrelated edits and save controls s
     expect(await page.getByLabel('AI connection text').inputValue()).toContain('Week 1');
     const rid=await page.evaluate(async()=> (await (await fetch('/api/roadmaps',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name:'Shared day plan',text:'# Week 1: Arrays\n## Day 1 · 2026-11-11\n- [ ] Practice vectors'})})).json()).id);
     await page.reload();
-    await page.getByRole('button',{name:'Preferences',exact:true}).click();
+    await page.getByRole('button',{name:'AI connections',exact:true}).click();
     await page.getByLabel('Include a roadmap', {exact:true}).selectOption(String(rid));
     await page.getByRole('button',{name:'Copy chat prompt',exact:true}).click();
     await expect.poll(async()=>await page.getByLabel('AI connection text').inputValue()).toContain('Practice vectors');

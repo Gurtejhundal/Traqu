@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import ReminderSettings from '../components/ReminderSettings'
+import { INTERESTS } from '../utils/workspaceProfile'
 import { ArrowUpRight, Camera, Check, Download, ImagePlus, RotateCcw, Settings2, ShieldCheck, Sparkles, UserRound, X } from 'lucide-react'
 import axios from 'axios'
 import ActivityCalendar from '../components/ActivityCalendar'
@@ -11,7 +14,7 @@ import { API_URL, IS_NATIVE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { drawCrop, preparePhoto } from '../utils/profile'
 
-const views = [{ key: 'overview', label: 'Overview' }, { key: 'personalize', label: 'Personalize' }, { key: 'preferences', label: 'Preferences' }]
+const views = [{ key: 'overview', label: 'Overview' }, { key: 'personalize', label: 'Personalize' }, { key: 'preferences', label: 'Preferences' }, { key: 'connections', label: 'AI connections' }]
 const toggles = [['compact', 'Compact task spacing', 'A little more room for your daily checklist.'], ['pet_motion', 'Qu’s movements & cursor gaze', 'A small companion, with a little personality.'], ['reduced_motion', 'Reduce motion', 'Steady poses and quieter transitions throughout Traqu.']]
 
 function Choices({ label, options, value, onChange }) {
@@ -21,7 +24,9 @@ function Choices({ label, options, value, onChange }) {
 export default function Profile() {
     const { profile, setProfile, ready, error: loadError, retry } = useWorkspace()
     const [draft, setDraft] = useState(profile)
-    const [view, setView] = useState('overview')
+    const [searchParams, setSearchParams] = useSearchParams()
+    const view = views.some(item => item.key === searchParams.get('tab')) ? searchParams.get('tab') : 'overview'
+    const setView = value => setSearchParams({ tab: value }, { replace: true })
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [error, setError] = useState('')
@@ -100,7 +105,7 @@ export default function Profile() {
             <button type="button" className={`profile-photo photo-${draft.avatar_shape} ${draft.avatar_monochrome ? 'photo-mono' : ''}`} onClick={() => { setView('personalize'); fileInput.current?.click() }} disabled={locked || reading} aria-label="Change profile photo">
                 {draft.avatar ? <img src={draft.avatar} alt="Your profile" /> : <UserRound size={37} strokeWidth={1.25} aria-hidden="true" />}<span className="photo-camera"><Camera size={13} /></span>
             </button>
-            <div className="profile-identity-copy"><div className="profile-name-line"><h1>{draft.name}</h1>{dirty && <span className="draft-chip">Preview</span>}</div><p>{draft.bio || 'A little more consistent. A little more you.'}</p></div>
+            <div className="profile-identity-copy"><div className="profile-name-line"><h1>{draft.name}</h1>{dirty && <span className="draft-chip">Preview</span>}</div><p>{draft.bio || 'A little more consistent. A little more you.'}</p>{draft.interests.length > 0 && <div className="profile-interest-tags">{draft.interests.map(interest => <span key={interest}>{interest}</span>)}</div>}</div>
             <button type="button" className="btn-secondary" onClick={() => setView(view === 'personalize' ? 'overview' : 'personalize')}><Settings2 size={14} />{view === 'personalize' ? 'Back to overview' : 'Personalize'}</button>
         </section>
         <nav className="profile-view-nav" aria-label="Profile sections">{views.map(item => <button type="button" key={item.key} aria-pressed={view === item.key} onClick={() => setView(item.key)}>{item.label}{item.key === 'personalize' && <Sparkles size={13} />}</button>)}<span><ShieldCheck size={13} />{IS_NATIVE ? 'On this device' : 'Your workspace'}</span></nav>
@@ -111,7 +116,7 @@ export default function Profile() {
             </aside><div className="profile-activity"><ActivityCalendar onSummary={setSummary} /></div>
         </div>
         <form onSubmit={save} noValidate className="profile-editor">
-            {view !== 'overview' && <footer className="profile-savebar"><span role="status" className={saved ? 'profile-saved' : 'profile-save-status'}>{saved ? (dirty ? 'Photo saved. Other changes are ready to save.' : 'Your profile and preferences are saved.') : photo ? 'Use or cancel the photo crop first.' : dirty ? 'You have unsaved changes.' : 'Everything is up to date.'}</span><div><button type="button" className="btn-secondary" disabled={!dirty || locked || Boolean(photo)} onClick={() => { setDraft(profile); setSaved(false); setError(''); setPhotoError('') }}><RotateCcw size={14} />Discard</button><button type="submit" className="btn-primary" disabled={!dirty || locked || Boolean(photo) || reading}><Check size={14} />{saving ? 'Saving…' : 'Save settings'}</button></div></footer>}
+            {['personalize', 'preferences'].includes(view) && <footer className="profile-savebar"><span role="status" className={saved ? 'profile-saved' : 'profile-save-status'}>{saved ? (dirty ? 'Photo saved. Other changes are ready to save.' : 'Your profile and preferences are saved.') : photo ? 'Use or cancel the photo crop first.' : dirty ? 'You have unsaved changes.' : 'Everything is up to date.'}</span><div><button type="button" className="btn-secondary" disabled={!dirty || locked || Boolean(photo)} onClick={() => { setDraft(profile); setSaved(false); setError(''); setPhotoError('') }}><RotateCcw size={14} />Discard</button><button type="submit" className="btn-primary" disabled={!dirty || locked || Boolean(photo) || reading}><Check size={14} />{saving ? 'Saving…' : 'Save settings'}</button></div></footer>}
             <fieldset disabled={locked} hidden={view !== 'personalize'} className="profile-editor-fields">
                 <div className="profile-section-heading"><span className="eyebrow">Personalize</span><h2>A space that feels like you.</h2><p>Photos save when you choose Use photo. Save your other changes with the controls above.</p></div>
                 <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your identity</h3><div className="photo-tools"><button type="button" className="btn-secondary" onClick={() => fileInput.current?.click()} disabled={reading}><ImagePlus size={15} />{reading ? 'Opening photo…' : 'Upload photo'}</button>{draft.avatar && <button type="button" className="btn-quiet" onClick={() => persistAvatar('')}><X size={14} />Remove</button>}</div><p className="profile-hint">JPG, PNG or WebP, up to 8 MB. Your photo is resized before it is saved; its location metadata is removed.</p>
@@ -124,17 +129,19 @@ export default function Profile() {
                     <label className="profile-inline-toggle"><span>Black & white photo</span><input type="checkbox" checked={draft.avatar_monochrome} onChange={event => change('avatar_monochrome', event.target.checked)} /></label>
                     <Choices label="Activity shades" options={[[ 'graphite', 'Graphite' ], [ 'sage', 'Sage' ], [ 'slate', 'Slate' ]]} value={draft.calendar_palette} onChange={value => change('calendar_palette', value)} />
                 </section></div>
+                <section className="profile-interests"><h3>Your interests</h3><div className="interest-chips">{INTERESTS.map(interest => <button type="button" key={interest} aria-pressed={draft.interests.includes(interest)} onClick={() => change('interests', draft.interests.includes(interest) ? draft.interests.filter(x => x !== interest) : [...draft.interests, interest])}>{interest}</button>)}</div></section>
                 <section className="profile-routine"><div><span className="eyebrow">Made for the days in between</span><h3>Your return ritual</h3><p>A personal target, with room for real life.</p></div><div className="profile-field-grid"><label>Active days in seven days<select value={draft.weekly_goal} onChange={event => change('weekly_goal', Number(event.target.value))}>{[1,2,3,4,5,6,7].map(n => <option key={n} value={n}>{n} {n === 1 ? 'day' : 'days'}</option>)}</select></label><label className="profile-field-wide">When I get stuck, remind me…<textarea value={draft.return_note} onChange={event => change('return_note', event.target.value)} maxLength={160} rows={2} placeholder="Ten minutes counts. Open Day 1 and begin." /><small>{draft.return_note.length}/160 · Just for you. Appears on your profile cover.</small></label></div></section>
             </fieldset>
             <fieldset disabled={locked} hidden={view !== 'preferences'} className="profile-editor-fields">
                 <div className="profile-section-heading"><span className="eyebrow">Preferences</span><h2>Find your rhythm.</h2><p>A few small adjustments for the way you work.</p></div>
                 <div className="profile-editor-columns"><section className="profile-editor-panel"><h3>Your calendar</h3><div className="profile-field-grid"><label className="profile-field-wide">Timezone<input value={draft.timezone} onChange={event => change('timezone', event.target.value)} list="profile-timezones" placeholder="Use this device’s timezone" /><datalist id="profile-timezones">{['Asia/Kolkata', 'UTC', 'Europe/London', 'America/New_York', 'America/Los_Angeles', 'Asia/Singapore', 'Australia/Sydney'].map(zone => <option key={zone}>{zone}</option>)}</datalist><small>Past activity keeps its original day.</small></label><label className="profile-field-wide">Start the week on<select value={draft.week_start} onChange={event => change('week_start', event.target.value)}><option value="monday">Monday</option><option value="sunday">Sunday</option></select></label></div></section><section className="profile-editor-panel"><h3>Comfort & companion</h3><div className="profile-toggles">{toggles.map(([key, title, copy]) => <label key={key}><span><strong>{title}</strong><small>{copy}</small></span><input type="checkbox" checked={draft[key]} onChange={event => change(key, event.target.checked)} /></label>)}</div></section></div>
                 <StorageControls />
-                <AIConnections />
+                <ReminderSettings profile={draft} onChange={change} />
                 <p className="profile-privacy"><ShieldCheck size={16} />{IS_NATIVE ? 'Your profile photo, preferences and history stay in your local workspace and workspace backups.' : 'Your profile photo and preferences are saved with your workspace and its backups.'}</p>
             </fieldset>
 
         </form>
+        {view === 'connections' && <AIConnections />}
         {cardOpen && summary && <ProfileCard profile={profile} summary={summary} onClose={() => setCardOpen(false)} />}
         <input ref={fileInput} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-label="Profile photo file" disabled={locked} onChange={choosePhoto} />
     </main>

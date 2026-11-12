@@ -55,3 +55,19 @@ test('profile choices validate before persisting and library GET does not attemp
  assert.throws(()=>routeRequest(freshWorkspace(),'put','/profile',{avatar:'https://example.com/photo.png'}),/photo/)
  assert.deepEqual(await prepareRequest('get','/roadmaps'),{body:undefined})
 })
+
+test('setup and reminder preferences persist and malformed values do not replace the mobile profile',()=>{
+ const s=freshWorkspace(),p={...s.profile,onboarding_completed:true,interests:['Coding','Career'],reminder_enabled:true,reminder_time:'08:30',desktop_notifications:false,notifications_seen:['ai-connection']}
+ routeRequest(s,'put','/profile',p)
+ assert.deepEqual(routeRequest(s,'get','/profile'),p)
+ for(const change of [{interests:['invalid']},{reminder_time:'24:00'},{reminder_enabled:'yes'},{notifications_seen:['invalid']}])assert.throws(()=>routeRequest(s,'put','/profile',{...p,...change}))
+ assert.deepEqual(s.profile,p)
+ assert.deepEqual(routeRequest(s,'get','/backup').profile,p)
+})
+
+test('skipping setup or dismissing a nudge does not block restoration of a real saved profile',()=>{
+ const source=state();routeRequest(source,'put','/profile',{...source.profile,name:'Recovered learner',interests:['Coding']});const backup=routeRequest(source,'get','/backup')
+ const target=freshWorkspace();routeRequest(target,'put','/profile',{...target.profile,onboarding_completed:true,notifications_seen:['ai-connection']});routeRequest(target,'post','/backup/restore-file',backup)
+ assert.equal(target.profile.name,'Recovered learner');assert.equal(target.profile.onboarding_completed,true)
+ const personalized=freshWorkspace();routeRequest(personalized,'put','/profile',{...personalized.profile,name:'Keep me'});routeRequest(personalized,'post','/backup/restore-file',backup);assert.equal(personalized.profile.name,'Keep me')
+})

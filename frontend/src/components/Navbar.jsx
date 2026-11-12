@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom'
 import { Plus, Library, Sparkles, ArrowDownToLine, UserRound } from 'lucide-react'
 import TraquLogo from './TraquLogo'
+import NotificationCenter from './NotificationCenter'
 import { IS_NATIVE, IS_MOBILE } from '../config'
 import { Companion } from './MotionUI'
 
@@ -50,6 +51,7 @@ export default function Navbar() {
                 </nav>
 
                 <div className="navbar-status">
+                    <NotificationCenter />
                     {/\/(?:roadmap|edit)\//.test(location.pathname) && <Companion size={48} className="qu-mini" />}
                     <span className="local-status"><i aria-hidden="true" /> {IS_MOBILE ? 'On device' : IS_NATIVE ? 'Local' : 'Web'}</span>
                 </div>

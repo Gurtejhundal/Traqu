@@ -56,6 +56,9 @@ test('desktop imports, saves, exports, restarts, and shuts down its private serv
       env,
     });
     const page = await application.firstWindow();
+    await page.waitForURL(/127\.0\.0\.1/);
+    await page.evaluate(async () => { const profile = await (await fetch('/api/profile')).json(); await fetch('/api/profile', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,onboarding_completed:true})}); });
+    await page.reload();
     page.on('pageerror', (error) => errors.push(error.message));
     page.on('console', (message) => { if (message.type() === 'error') console.error('Renderer:', message.text()); });
     await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible({ timeout: 60000 });
@@ -229,6 +232,9 @@ test('reviewed imports, stable edits, workspace restore, and reduced motion work
     application = await electron.launch({ executablePath: process.env.TRAQO_TEST_EXECUTABLE || require('electron'),
       args: [...(process.env.TRAQO_TEST_NO_SANDBOX === '1' ? ['--no-sandbox'] : []), ...(process.env.TRAQO_TEST_EXECUTABLE ? [] : [root])], env });
     const page = await application.firstWindow();
+    await page.waitForURL(/127\.0\.0\.1/);
+    await page.evaluate(async () => { const profile = await (await fetch('/api/profile')).json(); await fetch('/api/profile', {method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...profile,onboarding_completed:true})}); });
+    await page.reload();
     await expect(page.getByRole('heading', { name: 'Your roadmaps' })).toBeVisible({ timeout: 60000 });
     await expect(page.locator('.qu-stage')).toBeVisible();
     const qu = page.getByRole('button', { name: 'Play with Qu, your Traqu companion' });

@@ -1,10 +1,11 @@
-const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, dialog, shell, session, ipcMain, Notification } = require('electron');
 const { createWriteStream, existsSync, mkdirSync, readFileSync, writeFileSync, statSync, renameSync } = require('node:fs');
 const path = require('node:path');
 const { startBackend } = require('./backend.cjs');
 const { isWorkspaceURL, isExternalURL, validWindowState, workspaceDirectoryOverride } = require('./policy.cjs');
 
 app.setName('Traqu');
+if (process.platform === 'win32') app.setAppUserModelId('io.github.gurtejhundal.traqo');
 // Reuse the existing database when upgrading from the old display name.
 const dataOverride = workspaceDirectoryOverride(app.getPath('appData'), process.env.TRAQO_DATA_DIR);
 if (dataOverride) app.setPath('userData', dataOverride);
@@ -14,6 +15,7 @@ let backend;
 let log;
 let recovery;
 let backupTimer;
+let reminderTimer;
 let backupDebounce;
 let quitting = false;
 let shutdownComplete = false;
@@ -115,6 +117,7 @@ async function launch() {
     if (!backend || event.sender !== window?.webContents || event.senderFrame?.parent
         || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
   }
+  ipcMain.handle('traqu:notifications', event => { privateSender(event); return { supported: Notification.isSupported(), requiresSignedApp: process.platform === 'darwin' }; });
   ipcMain.handle('traqu:storage', async (event, action) => {
     privateSender(event);
     if (!recovery) throw new Error('Local backups are still starting.');
@@ -158,11 +161,17 @@ async function launch() {
         || !isWorkspaceURL(event.senderFrame?.url || '', backend.origin)) throw new Error('Private workspace required.');
     const { CLIENTS, configForClient, connectClient } = require('./mcp.cjs');
     if (!payload || !Object.hasOwn(CLIENTS, payload.client) || typeof payload.allowWrite !== 'boolean'
-        || !['connect', 'config'].includes(payload.action)) throw new Error('Choose a supported AI app and access mode.');
+        || !['connect', 'config', 'workflow'].includes(payload.action)) throw new Error('Choose a supported AI app and access mode.');
     const options = { packaged: app.isPackaged, resourcesPath: process.resourcesPath, root,
       dataDir: app.getPath('userData'), appData: app.getPath('appData'), allowWrite: payload.allowWrite };
     if (payload.action === 'config') return { config: { mcpServers: { traqu: configForClient(options, payload.client) } } };
     const name = CLIENTS[payload.client];
+    if (payload.action === 'workflow') {
+      const confirmation = await dialog.showMessageBox(window,{type:'question',message:`Install Traqu’s workflow for ${name}?`,detail:'This installs the Traqu plugin or skill in your AI app. Plugins may be downloaded from Gurtejhundal/Traqu on GitHub. Your existing MCP connection and its permissions stay the same.',buttons:['Cancel','Install'],defaultId:0,cancelId:0});
+      if (confirmation.response !== 1) return {canceled:true};
+      return require('./agent-workflow.cjs').installWorkflow({...options,client:payload.client});
+    }
+
     const confirmation = await dialog.showMessageBox(window, { type: 'question',
       message: `Set up Traqu for ${name}?`,
       detail: `${payload.allowWrite ? `${name} can read and edit your local roadmaps and tasks.` : `${name} can read your local roadmaps and tasks.`}\nThis adds a connection to its settings and backs up previous settings. Restart ${name} afterward. Your AI app must be installed and signed in separately.`,
@@ -233,6 +242,23 @@ async function launch() {
       clearTimeout(backupDebounce);backupDebounce=setTimeout(automaticBackup,1000);
     }
   });
+  const reminderTick = require('./reminders.cjs').createReminders({ dataDir,
+    readProfile: async () => {
+      const response = await fetch(`${backend.origin}/api/profile`, {headers:{'X-Traqo-Desktop-Token':backend.token},signal:AbortSignal.timeout(10000)});
+      if (!response.ok) throw new Error('Reminder preferences unavailable.');
+      return response.json();
+    },
+    show: () => {
+      if (!Notification.isSupported()) return false;
+      const notification = new Notification({title:'One small step today',body:'Your next day is waiting in Traqu. A little progress counts.',icon:path.join(__dirname,'resources','icon.png'),silent:true});
+      notification.on('click', () => { if (!window) createWindow(); navigate('/'); window.show(); window.focus(); });
+      notification.on('failed', (_event, error) => log?.write(`Notification delivery failed: ${String(error || 'Check system notification settings.')}\n`));
+      notification.show(); return true;
+    },
+  });
+  const checkReminder = () => reminderTick().catch(error => log?.write(`Reminder: ${error.message}\n`));
+  reminderTimer = setInterval(checkReminder, 30000);
+  await checkReminder();
   starting = false;
   if (window && !window.isDestroyed()) await window.loadURL(backend.origin);
   app.on('activate', () => {
@@ -257,7 +283,8 @@ app.on('before-quit', (event) => {
   quitting = true;
   if (shutdownComplete) return;
   event.preventDefault();
-  clearInterval(backupTimer);clearTimeout(backupDebounce);
+  clearInterval(backupTimer);
+  clearInterval(reminderTimer);clearTimeout(backupDebounce);
   Promise.resolve(recovery?.save()).catch(error=>log?.write(`Final backup: ${error.message}\n`)).then(()=>backend?.stop()).finally(() => {
     shutdownComplete = true;
     log?.end();

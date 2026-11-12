@@ -1,0 +1,13 @@
+{
+  "name": "traqu",
+  "owner": {
+    "name": "Gurtejbir Singh"
+  },
+  "plugins": [
+    {
+      "name": "traqu",
+      "source": "./plugins/traqu",
+      "description": "Your roadmaps. One day at a time."
+    }
+  ]
+}

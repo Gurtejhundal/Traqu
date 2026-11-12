@@ -10,7 +10,8 @@ import models_db as models
 DEFAULT_PROFILE = {'name': 'Your workspace', 'bio': '', 'goal': '', 'timezone': '',
                    'week_start': 'monday', 'compact': False, 'pet_motion': True, 'reduced_motion': False,
                    'avatar': '', 'avatar_shape': 'circle', 'avatar_monochrome': True, 'cover': 'paper',
-                   'calendar_palette': 'graphite', 'weekly_goal': 5, 'return_note': ''}
+                   'calendar_palette': 'graphite', 'weekly_goal': 5, 'return_note': '', 'onboarding_completed': False, 'interests': [],
+                   'reminder_enabled': False, 'reminder_time': '19:00', 'desktop_notifications': False, 'notifications_seen': []}
 
 
 def zone(value):
@@ -158,8 +159,11 @@ def validate_backup(payload):
 def restore(session, user_id, extras):
     # Restoring is additive. Keep an existing profile; history retains its stable
     # event identity so importing the same backup twice cannot inflate streaks.
-    if extras.get('profile') and not session.query(models.WorkspaceProfile).filter_by(user_id=user_id).first():
-        write_profile(session, user_id, extras['profile'])
+    existing = read_profile(session, user_id)
+    personal = any(existing.get(key) != value for key, value in DEFAULT_PROFILE.items()
+                   if key not in {'onboarding_completed', 'notifications_seen'})
+    if extras.get('profile') and not personal:
+        write_profile(session, user_id, {**extras['profile'], 'onboarding_completed': existing.get('onboarding_completed', False) or extras['profile'].get('onboarding_completed', False)})
     known = {key for (key,) in session.query(models.DailyActivity.event_key).filter_by(user_id=user_id)}
     for row in extras.get('activity', []):
         if row['event_key'] not in known:
