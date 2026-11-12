@@ -14,7 +14,7 @@ export default function ProfileCard({ profile, summary, onClose }) {
         renderProfileCard(canvas.current,profile,summary,options,()=>current).then(()=>{if(current)setReady(true)}).catch(()=>{if(current)setError('The card could not be drawn. Try hiding the photo or reopening this preview.')})
         return()=>{current=false}
     },[profile,summary,options])
-    const change=(key,value)=>setOptions(current=>({...current,[key]:value}))
+    const change=(key,value)=>{if(options[key]===value)return;setReady(false);setOptions(current=>({...current,[key]:value}))}
     async function imageFile(){
         const blob=await new Promise(resolve=>canvas.current.toBlob(resolve,'image/png'))
         if(!blob)throw new Error('The card image could not be created. Try again.')

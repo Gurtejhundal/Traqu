@@ -42,6 +42,7 @@ public class OfflineWorkspaceTest {
             js("document.querySelector('.profile-view-nav button:nth-child(2)').click()");
             waitFor("document.querySelector('input[autocomplete=nickname]')");
             fill("input[autocomplete=nickname]", "Android tester");
+            waitFor("document.querySelector('.profile-savebar button[type=submit]')?.disabled===false");
             js("document.querySelector('.profile-savebar button[type=submit]').click()");
             waitFor("document.querySelector('.profile-saved')");
             scenario.recreate();
