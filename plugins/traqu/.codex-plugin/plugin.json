@@ -1,0 +1,30 @@
+{
+  "name": "traqu",
+  "version": "1.0.0",
+  "description": "Work through your local Traqu roadmaps with day-by-day focus.",
+  "author": {
+    "name": "Gurtejbir Singh",
+    "url": "https://gurtejbirsingh.vercel.app"
+  },
+  "homepage": "https://traqu.vercel.app",
+  "repository": "https://github.com/Gurtejhundal/Traqu",
+  "license": "MIT",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Traqu",
+    "shortDescription": "Your roadmaps. One day at a time.",
+    "longDescription": "Find your next day, review unfinished tasks and update your local Traqu workspace through its separately configured MCP connection.",
+    "developerName": "Gurtejbir Singh",
+    "category": "Productivity",
+    "capabilities": [
+      "Instructions"
+    ],
+    "websiteURL": "https://traqu.vercel.app",
+    "defaultPrompt": [
+      "Use Traqu to show my roadmaps and help me choose today\u2019s unfinished tasks."
+    ],
+    "brandColor": "#202020",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/icon.png"
+  }
+}

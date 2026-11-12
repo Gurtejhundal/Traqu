@@ -1,0 +1,20 @@
+{
+  "name": "traqu",
+  "interface": {
+    "displayName": "Traqu"
+  },
+  "plugins": [
+    {
+      "name": "traqu",
+      "source": {
+        "source": "local",
+        "path": "./plugins/traqu"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

@@ -3287,4 +3287,7 @@ html[data-traqu-mobile=true] .profile-savebar { bottom:calc(8px + env(safe-area-
 .ai-connection > [role=status] { min-height:22px; }
 
 .storage-controls { border:1px solid var(--border); border-radius:9px; padding:18px 20px; margin:22px 0 30px; background:var(--surface); }
-.storage-heading { display:flex; align-items:flex-start; gap:11px; }.storage-heading strong { font-size:13px; }.storage-heading p,.storage-detail { color:var(--text-secondary); font-size:11px; line-height:1.7; margin:5px 0; }.storage-path { font:11px/1.6 ui-monospace,monospace; overflow-wrap:anywhere; margin:12px 0 5px; }.storage-actions { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }.storage-controls > [role=status] { margin:8px 0 0; font-size:11px; }.storage-heading svg { flex-shrink:0; margin-top:3px; }
+.storage-detail { color:var(--text-secondary); font-size:11px; line-height:1.7; margin:5px 0; }.storage-path { font:11px/1.6 ui-monospace,monospace; overflow-wrap:anywhere; margin:12px 0 5px; }.storage-actions { display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }.storage-controls > [role=status] { margin:8px 0 0; font-size:11px; }
+
+.storage-controls h3 { margin:0; font-size:14px; }
+.storage-controls summary { cursor:pointer; color:var(--text-secondary); font-size:12px; width:fit-content; }

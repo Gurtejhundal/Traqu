@@ -23,6 +23,19 @@ Traqu backs up existing settings and preserves other servers and preferences. JS
 
 The bundled server works when the Traqu window is closed. Keep the application installed at the same location; reconnect after moving or reinstalling it. This is a desktop feature, not an Android or website live connection. Uninstalling Traqu does not remove client configuration; remove its entry in your AI app's MCP settings.
 
+### Traqu logo in the Codex composer
+
+The optional **Traqu plugin** adds the Traqu name, logo and a day-focused workflow to Codex. It uses the MCP connection above; it does not create a second server or change its permissions.
+
+With Codex CLI installed:
+
+```sh
+codex plugin marketplace add Gurtejhundal/Traqu
+codex plugin add traqu@traqu
+```
+
+Restart Codex, open a new chat and select **Traqu** from the composer’s plugin picker (or mention it with `@`). Ask: “Use Traqu to show my internship roadmap’s next unfinished day.” The plugin is distributed through this repository marketplace, not the public plugin directory. Installing its instructions alone does not connect a workspace; complete **Connect to Codex** first. Remove it with Codex’s plugin settings; your roadmaps remain in Traqu.
+
 ### Free ChatGPT, Claude and Gemini browser chats
 
 Use **Copy chat prompt** in the same section. It embeds the complete roadmap format, without requiring the chat to browse a skill URL. Optionally include one selected roadmap's day sections, dates, real completion flags, task properties and attached context. Profile information, photos and global activity history are excluded. Review the selectable text before sharing. The selected roadmap may contain sensitive notes.

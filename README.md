@@ -112,6 +112,8 @@ In desktop version **1.6.1+**, open **Profile → Preferences → AI connections
 
 For free ChatGPT, Claude or Gemini browser chats, **Copy chat prompt** provides the full Traqu format and optionally one chosen roadmap. Paste it into your chat and import the result. This is a manual copy/import workflow, not live synchronization.
 
+Want the Traqu name and logo in your Codex composer? Install the optional [Traqu Codex plugin](docs/MCP.md#traqu-logo-in-the-codex-composer), then select Traqu in a new chat. It uses your existing MCP connection.
+
 [Client setup, source installation, available tools and access modes](docs/MCP.md).
 
 ## One day at a time

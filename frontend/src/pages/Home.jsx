@@ -6,7 +6,6 @@ import { AlertCircle, ArrowRight, FileText, Plus, RefreshCw, Trash2, Download, U
 import { API_URL, LOCAL_USER_ID, IS_NATIVE, IS_MOBILE } from '../config'
 import { getApiErrorMessage } from '../utils/apiErrors'
 import { downloadFile } from '../utils/downloadFile'
-import StorageControls from '../components/StorageControls'
 import { Companion } from '../components/MotionUI'
 
 export default function Home() {
@@ -87,7 +86,6 @@ export default function Home() {
                 </div>
             </header>
 
-            <StorageControls />
             {location.state?.restored > 0 && <p role="status" className="workspace-note">Restored {location.state.restored} roadmaps as new copies.</p>}
             {loading ? (
                 <div className="loading-state" role="status" aria-live="polite">

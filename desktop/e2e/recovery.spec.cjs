@@ -23,7 +23,13 @@ test('external recovery restores real progress after deleting app data, and upda
   page=await launch();
   expect(JSON.parse(fs.readFileSync(backupFile,'utf8')).roadmaps[0].name).toBe('Recovered goal');
   await app.evaluate(({dialog},file)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[file]});},backupFile);
+  await expect(page.getByRole('region',{name:'Backups and updates'})).toHaveCount(0);
+  await page.goto(new URL('/profile',page.url()).href);
+  await page.getByRole('button',{name:'Preferences',exact:true}).click();
+  await expect(page.locator('.storage-path')).toBeHidden();
   await page.getByRole('button',{name:'Restore backup',exact:true}).click();
+  await expect.poll(()=>page.evaluate(async()=> (await (await fetch('/api/roadmaps')).json()).length)).toBe(1);
+  await page.goto(new URL('/',page.url()).href);
   await expect(page.getByRole('link',{name:'Open Recovered goal',exact:true})).toBeVisible();
   const restored=await page.evaluate(async()=>{
    const read=async path=>(await fetch('/api'+path)).json();const rows=await read('/roadmaps');return {tasks:await read(`/roadmaps/${rows[0].id}/tasks`),profile:await read('/profile'),activity:await read('/activity?timezone=Asia%2FKolkata')};
@@ -34,6 +40,8 @@ test('external recovery restores real progress after deleting app data, and upda
    global.fetch=async(url,...args)=>String(url).startsWith('https://api.github.com/')?new Response(JSON.stringify({tag_name:'v99.0.0',assets:[{name:process.platform==='win32'?`Traqu-Windows-${process.arch}.exe`:process.platform==='darwin'?`Traqu-macOS-${process.arch}.dmg`:'Traqu-Linux-x64.deb',browser_download_url:'https://github.com/Gurtejhundal/Traqu/releases/download/v99.0.0/test-installer'}]}),{status:200,headers:{'Content-Type':'application/json'}}):original(url,...args);
    shell.openExternal=async url=>{global.traquTestUpdateURL=url;};
   });
+  await page.goto(new URL('/profile',page.url()).href);
+  await page.getByRole('button',{name:'Preferences',exact:true}).click();
   await page.getByRole('button',{name:'Check for updates',exact:true}).click();await expect(page.getByRole('button',{name:'Back up & download update',exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Back up & download update',exact:true}).click();
   await expect.poll(()=>app.evaluate(()=>global.traquTestUpdateURL)).toContain('/v99.0.0/');
