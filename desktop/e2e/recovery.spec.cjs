@@ -29,7 +29,7 @@ test('external recovery restores real progress after deleting app data, and upda
   await page.goto(new URL('/profile',page.url()).href);
   await page.getByRole('button',{name:'Preferences',exact:true}).click();
   await expect(page.locator('.storage-path')).toBeHidden();
-  await page.getByRole('button',{name:'Restore backup',exact:true}).click();
+  await Promise.all([page.waitForEvent('domcontentloaded'),page.getByRole('button',{name:'Restore backup',exact:true}).click()]);
   await expect.poll(()=>page.evaluate(async()=> (await (await fetch('/api/roadmaps')).json()).length)).toBe(1);
   await page.goto(new URL('/',page.url()).href);
   await expect(page.getByRole('link',{name:'Open Recovered goal',exact:true})).toBeVisible();

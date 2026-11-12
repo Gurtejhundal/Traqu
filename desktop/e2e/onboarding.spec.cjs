@@ -16,7 +16,9 @@ test('quick setup, optional reminders, inbox and dedicated agent workflows persi
   await page.getByRole('button',{name:'Continue',exact:true}).click();
   await expect(page.getByLabel('Daily reminder in Traqu')).not.toBeChecked();
   await page.getByLabel('Daily reminder in Traqu').check();await page.getByLabel('Reminder time',{exact:true}).fill('00:00');
-  await expect(page.getByLabel('Also send a desktop notification')).not.toBeChecked();
+  const notificationSupport=await page.evaluate(()=>window.traquDesktop.notifications());
+  if(notificationSupport.supported) await expect(page.getByLabel('Also send a desktop notification')).not.toBeChecked();
+  else await expect(page.getByText('Desktop notifications are unavailable here. Your in-app reminder still works.',{exact:true})).toBeVisible();
   await page.getByRole('button',{name:'Make myself at home',exact:true}).click();
   await expect(page.getByRole('heading',{name:'Your roadmaps',exact:true})).toBeVisible();
   let profile=await page.evaluate(async()=> (await fetch('/api/profile')).json());
